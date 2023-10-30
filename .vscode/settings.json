@@ -12,6 +12,19 @@
             "database": "cbm_system",
             "username": "root",
             "connectionTimeout": 2000
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "MySQL",
+            "name": "psql",
+            "database": "postgres",
+            "username": "postgres"
         }
     ]
 }

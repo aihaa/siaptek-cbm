@@ -15,10 +15,11 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import matplotlib.pyplot as plt
 from scipy import signal 
-import pymysql
+# import pymysql
 from navbar import navbar
 from additional import offcanvas_left, files_option, offcanvas_left_2
 from utils import retrieve_files
+import psycopg2
 
 load_figure_template('LUX')
 
@@ -30,12 +31,26 @@ load_figure_template('LUX')
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 
-connection = pymysql.connect(
-    host = "localhost",
-    user = "root",
-    password = "17200bc10B1_",
-    database = "cbm_system"
-)
+db_type = 'postgres'
+
+
+# if db_type = 'mysql':
+#     connection = pymysql.connect(
+#         host = "localhost",
+#         user = "root",
+#         password = "17200bc10B1_",
+#         database = "cbm_system"
+#     )
+
+if db_type == 'postgres':
+    connection = psycopg2.connect(
+        host = "localhost",
+        user = "postgres",
+        password = "17200bc10b1_",
+        database = "postgres"
+    )
+else:
+    print ("Invalid database type")
 
 cursor = connection.cursor()
 
@@ -176,7 +191,7 @@ def update_memory(selected_file):
     else:
         data = None
 
-    cursor.close()
+    # cursor.close()
 
     if data is not None:
         # # data = data[0].replace("'", "\"")  # Replace single quotes with double quotes

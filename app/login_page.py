@@ -13,29 +13,43 @@ import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy import signal
+from db_operations import execute_query
 # from jupyter_dash import JupyterDash
-import pymysql
+# import pymysql
+import psycopg2
+
+db_type = 'postgres'
 
 
-connection = pymysql.connect(
-    host = "localhost",
-    user = "root",
-    password = "17200bc10B1_",
-    database = "cbm_system"
-)
+# if db_type = 'mysql':
+#     connection = pymysql.connect(
+#         host = "localhost",
+#         user = "root",
+#         password = "17200bc10B1_",
+#         database = "cbm_system"
+#     )
+
+if db_type == 'postgres':
+    connection = psycopg2.connect(
+        host = "localhost",
+        user = "postgres",
+        password = "17200bc10b1_",
+        database = "postgres"
+    )
+else:
+    print ("Invalid database type")
 
 cursor = connection.cursor()
 
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS tbl_users (
-id INT AUTO_INCREMENT PRIMARY KEY,
+id SERIAL PRIMARY KEY,
 username VARCHAR(255) NOT NULL,
-password VARCHAR(255) NOT NULL
+password VARCHAR(255)
 )
 """)
 
-if connection.open:
-    print("Connected to the server...")
+
 
 email_input = html.Div(
     className="form-group d-flex",
@@ -137,3 +151,10 @@ def login(n_clicks, username, password):
         
     raise dash.exceptions.PreventUpdate
 
+if connection:
+    print("Connected login_page to the server...")
+
+connection.commit()
+
+# cursor.close()
+connection.close()

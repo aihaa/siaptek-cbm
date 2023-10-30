@@ -7,14 +7,31 @@ import scipy.fft as fft
 from scipy import signal
 import base64
 import io
-import pymysql
+# import pymysql
+import psycopg2
 
-connection = pymysql.connect(
-    host = "localhost",
-    user = "root",
-    password = "17200bc10B1_",
-    database = "cbm_system"
-)
+db_type = 'postgres'
+
+
+# if db_type = 'mysql':
+#     connection = pymysql.connect(
+#         host = "localhost",
+#         user = "root",
+#         password = "17200bc10B1_",
+#         database = "cbm_system"
+#     )
+
+if db_type == 'postgres':
+    connection = psycopg2.connect(
+        host = "localhost",
+        user = "postgres",
+        password = "17200bc10b1_",
+        database = "postgres"
+    )
+else:
+    print ("Invalid database type")
+
+
 
 cursor = connection.cursor()
 
@@ -105,6 +122,13 @@ def get_ftaps(f_type, f_order, fc_1, fc_2, fs):
 def retrieve_files():
     cursor.execute("SELECT filename FROM memory1")
     result = cursor.fetchall()
-    cursor.close()
     return [row[0] for row in result]
     # return result
+
+if connection:
+    print("Connected utils to the server...")
+
+connection.commit()
+
+# cursor.close()
+# connection.close()

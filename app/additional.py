@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import matplotlib.pyplot as plt
 from scipy import signal 
-import pymysql
+# import pymysql
 import navbar
 from utils import retrieve_files
 #-------------------------------------------------------(OFFCANVAS LEFT)---------------------------------------------------------------------------

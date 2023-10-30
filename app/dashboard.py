@@ -15,7 +15,8 @@ import plotly.graph_objects as go
 # import plotly.io as pio
 # import matplotlib.pyplot as plt
 from scipy import signal 
-import pymysql
+# import pymysql
+import psycopg2
 from navbar import navbar
 from additional import offcanvas_left
 
@@ -29,12 +30,26 @@ load_figure_template('LUX')
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 
-connection = pymysql.connect(
-    host = "localhost",
-    user = "root",
-    password = "17200bc10B1_",
-    database = "cbm_system"
-)
+db_type = 'postgres'
+
+
+# if db_type = 'mysql':
+#     connection = pymysql.connect(
+#         host = "localhost",
+#         user = "root",
+#         password = "17200bc10B1_",
+#         database = "cbm_system"
+#     )
+
+if db_type == 'postgres':
+    connection = psycopg2.connect(
+        host = "localhost",
+        user = "postgres",
+        password = "17200bc10b1_",
+        database = "postgres"
+    )
+else:
+    print ("Invalid database type")
 
 cursor = connection.cursor()
 
@@ -199,9 +214,9 @@ def update_memory(contents, filename):
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS memory1 (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    filename VARCHAR(255),
-    data LONGTEXT
+        id SERIAL PRIMARY KEY, 
+        filename VARCHAR(255), 
+        data TEXT
     )
     """)
 
@@ -551,4 +566,10 @@ def plot_filter(filter_type, n_fft, fs, fc_1, fc_2):
     return filter_mem_data
 
 
-# connection.close()
+if connection:
+    print("Connected dashboard to the server...")
+
+connection.commit()
+
+# cursor.close()
+connection.close()
