@@ -19,39 +19,15 @@ from scipy import signal
 import psycopg2
 from navbar import navbar
 from additional import offcanvas_left
+from db_operations import *
 
 load_figure_template('LUX')
-
-# Define external stylesheets for the app
-#external_stylesheets = [dbc.themes.BOOTSTRAP]
 
 # Create a Dash app
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
-
-db_type = 'postgres'
-
-
-# if db_type = 'mysql':
-#     connection = pymysql.connect(
-#         host = "localhost",
-#         user = "root",
-#         password = "17200bc10B1_",
-#         database = "cbm_system"
-#     )
-
-if db_type == 'postgres':
-    connection = psycopg2.connect(
-        host = "localhost",
-        user = "postgres",
-        password = "17200bc10b1_",
-        database = "postgres"
-    )
-else:
-    print ("Invalid database type")
-
-cursor = connection.cursor()
+get_db_connection
 
 #--------------------------------------------------(LAYOUT)------------------------------------------------------------------------
 
@@ -212,37 +188,30 @@ def update_memory(contents, filename):
     
     file_contents = parse_contents(contents, filename).to_dict()
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS memory1 (
-        id SERIAL PRIMARY KEY, 
-        filename VARCHAR(255), 
-        data TEXT
-    )
-    """)
-
-    # # Store filename and data in MySQL database
-    # sql = "INSERT INTO memory1 (filename, data) VALUES (%s, %s) IF NOT EXISTS {filename}"
-    # val = (filename, str(file_contents))  # Store the data as JSON string
-    # cursor.execute(sql, val)
-    # connection.commit()
+    try:
+        execute_create_query("""
+        CREATE TABLE IF NOT EXISTS memory1 (
+            id SERIAL PRIMARY KEY, 
+            filename VARCHAR(255), 
+            data TEXT
+        )
+        """)
+    except Exception as e:
+        print(f"Error creating table: {e}")
 
     # Check if the filename already exists
-    cursor.execute("SELECT filename FROM memory1 WHERE filename = %s", (filename,))
-    result = cursor.fetchone()
+    result = execute_read_query("SELECT filename FROM memory1 WHERE filename = %s", (filename,))
 
     if result:
         # File already exists, update the data
         sql = "UPDATE memory1 SET data = %s WHERE filename = %s"
         val = (str(file_contents), filename)
-        cursor.execute(sql, val)
+        execute_update_query(sql, val)
     else:
         # File doesn't exist, insert the data
         sql = "INSERT INTO memory1 (filename, data) VALUES (%s, %s)"
         val = (filename, str(file_contents))
-        cursor.execute(sql, val)
-
-    # cursor.close()
-    # connection.close()
+        execute_create_query(sql, val)
 
 
     return dict({'filenames': filename, 'data': file_contents}), f"File: {filename}"
@@ -566,10 +535,10 @@ def plot_filter(filter_type, n_fft, fs, fc_1, fc_2):
     return filter_mem_data
 
 
-if connection:
-    print("Connected dashboard to the server...")
+# if connection:
+#     print("Connected dashboard to the server...")
 
-connection.commit()
+# connection.commit()
 
 # cursor.close()
-connection.close()
+# connection.close()

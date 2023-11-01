@@ -1,0 +1,1 @@
+1. updated & usage of db_operations (CRUD concept)

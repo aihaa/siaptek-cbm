@@ -7,33 +7,10 @@ import scipy.fft as fft
 from scipy import signal
 import base64
 import io
-# import pymysql
 import psycopg2
+from db_operations import *
 
-db_type = 'postgres'
-
-
-# if db_type = 'mysql':
-#     connection = pymysql.connect(
-#         host = "localhost",
-#         user = "root",
-#         password = "17200bc10B1_",
-#         database = "cbm_system"
-#     )
-
-if db_type == 'postgres':
-    connection = psycopg2.connect(
-        host = "localhost",
-        user = "postgres",
-        password = "17200bc10b1_",
-        database = "postgres"
-    )
-else:
-    print ("Invalid database type")
-
-
-
-cursor = connection.cursor()
+get_db_connection
 
 # Opens a netCDF file and returns an object that represents the opened file (nc_handler)
 def get_handle(file):
@@ -120,15 +97,24 @@ def get_ftaps(f_type, f_order, fc_1, fc_2, fs):
 - retrieve data from memory1 table
 '''
 def retrieve_files():
-    cursor.execute("SELECT filename FROM memory1")
-    result = cursor.fetchall()
-    return [row[0] for row in result]
-    # return result
 
-if connection:
-    print("Connected utils to the server...")
+    try:
+        # Check if the 'memory1' table exists
+        table_exists = execute_read_query("""
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'memory1'
+            )
+        """)
+        
+        # If the table exists, fetch the filenames
+        if table_exists:
+            result = execute_read_query("SELECT filename FROM memory1")
+            return [row[0] for row in result]
+        else:
+            print("Table 'memory1' does not exist.")
+            return []
+    except Exception as e:
+        print(f"Error retrieving files: {e}")
+        return []
 
-connection.commit()
-
-# cursor.close()
-# connection.close()

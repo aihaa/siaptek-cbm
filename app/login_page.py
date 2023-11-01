@@ -13,35 +13,12 @@ import pandas as pd
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy import signal
-from db_operations import execute_query
-# from jupyter_dash import JupyterDash
-# import pymysql
+from db_operations import *
 import psycopg2
 
-db_type = 'postgres'
+get_db_connection
 
-
-# if db_type = 'mysql':
-#     connection = pymysql.connect(
-#         host = "localhost",
-#         user = "root",
-#         password = "17200bc10B1_",
-#         database = "cbm_system"
-#     )
-
-if db_type == 'postgres':
-    connection = psycopg2.connect(
-        host = "localhost",
-        user = "postgres",
-        password = "17200bc10b1_",
-        database = "postgres"
-    )
-else:
-    print ("Invalid database type")
-
-cursor = connection.cursor()
-
-cursor.execute("""
+execute_create_query("""
 CREATE TABLE IF NOT EXISTS tbl_users (
 id SERIAL PRIMARY KEY,
 username VARCHAR(255) NOT NULL,
@@ -108,26 +85,6 @@ layout = html.Div(className="main h-100 w-100", children=[
         ])
 
 
-# layout = html.Div(className="d-flex card justify-content-center w-50 container login-form",children=
-#     [
-#         dcc.Location(id='url', refresh=False,pathname='login_page'),
-#         html.Div(className="card-header" ,children=html.H1("Login Page")),
-#         dbc.Form(className="card-body form-horizontal",
-#                  children=[
-#                     html.Div(className="form-group row",children=[email_input]),
-#                     html.Div(className="form-group row",children=[password_input]),
-                    
-#                     html.Button("Login", id="login-button", className="btn btn-primary" , n_clicks=0),
-                    
-#                  ],style={"width": '50%', "height": 200}),
-#         html.Div(id="login-status")
-        
-               
-#     ]
-# )
-
-
-
 @callback(
     [Output('url', 'pathname'),
      Output("login-status","children")],
@@ -141,7 +98,7 @@ def login(n_clicks, username, password):
         SELECT * FROM tbl_users
         WHERE username = %s AND password = %s
         """
-        cursor.execute(query,(username,password))
+        execute_read_query(query,(username,password))
         result = cursor.fetchone()
 
         if result:
@@ -150,11 +107,3 @@ def login(n_clicks, username, password):
             return ('/login_page',print("fail login"))
         
     raise dash.exceptions.PreventUpdate
-
-if connection:
-    print("Connected login_page to the server...")
-
-connection.commit()
-
-# cursor.close()
-connection.close()
