@@ -10,8 +10,6 @@ import io
 import psycopg2
 from db_operations import *
 
-get_db_connection
-
 # Opens a netCDF file and returns an object that represents the opened file (nc_handler)
 def get_handle(file):
     nc_handle = Dataset(file, 'r')

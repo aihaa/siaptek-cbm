@@ -16,7 +16,6 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import matplotlib.pyplot as plt
 from scipy import signal 
-# import pymysql
 
 
 # def navbar():

@@ -68,20 +68,11 @@ def toggle_offcanvas(n1, is_open):
     return [is_open]
 
 
-
+# file_dropdown_id = "file_dropdown"
 # ------------------------------------------------------------------------------------------
-files_option = html.Div([
+file_option = html.Div([
     dcc.Dropdown(id="file_dropdown", className="btn btn-sm",style={'width':'400px'}, options=[{'label': filename, 'value': filename} for filename in retrieve_files()],
                 placeholder='Select a File'),
-    # dcc.Dropdown(
-    #     id='file-dropdown',
-    #     style={'width': '400px'},
-    #     options=[
-    #         {'label': filename, 'value': filename, 'id': f'dropdown-item-{i}'}
-    #         for i, filename in enumerate(retrieve_files())
-    #     ],
-    #     placeholder='Select a File'
-    # )
 ])
 
 # ------------------------------------------------------------------------------------------

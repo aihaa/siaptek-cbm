@@ -27,8 +27,6 @@ load_figure_template('LUX')
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
-get_db_connection
-
 #--------------------------------------------------(LAYOUT)------------------------------------------------------------------------
 
 # Define the layout of the app
@@ -105,7 +103,6 @@ layout = html.Div(
 )
 
 
-predefined_list = ['Variable A', 'Variable B']
 
 # Purpose: Ensures that variable_list is always synchronized with the data stored in memory1
 @callback(
@@ -115,12 +112,9 @@ predefined_list = ['Variable A', 'Variable B']
 def update_variable_list(mem_data):
 
     if mem_data is None:
-        # suggestion = html.Ul([html.Li(var) for var in predefined_list])
-        # return html.Div([suggestion])
         raise dash.exceptions.PreventUpdate
     else:
         var_list = list(mem_data['data']['data_vars'].keys())
-
         var_buttons = create_list_radio(var_list, "var_list_radio")
 
         return var_buttons
@@ -143,16 +137,16 @@ def update_metadata(mem_data):
     return str(meta_head)
 
 
-predefined_data = {
-    'data_vars': {
-        'Variable A': {'type': 'categorical'},
-        'Variable B': {'type': 'numeric'}
-    },
-    'metadata': {
-        'description': 'Predefined dataset',
-        'author': 'Aiman Fatihah',
-    }
-}
+# predefined_data = {
+#     'data_vars': {
+#         'Variable A': {'type': 'categorical'},
+#         'Variable B': {'type': 'numeric'}
+#     },
+#     'metadata': {
+#         'description': 'Predefined dataset',
+#         'author': 'Aiman Fatihah',
+#     }
+# }
 
 # Purpose: To ensure that variable_content is always synchronized with selected varible and data stored in memory1
 #           -- allow user to see detailed information about the selected varible and explore its content

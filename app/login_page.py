@@ -16,8 +16,6 @@ from scipy import signal
 from db_operations import *
 import psycopg2
 
-get_db_connection
-
 execute_create_query("""
 CREATE TABLE IF NOT EXISTS tbl_users (
 id SERIAL PRIMARY KEY,
