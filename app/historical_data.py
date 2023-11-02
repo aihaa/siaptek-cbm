@@ -37,53 +37,57 @@ layout = html.Div(
         html.H4("CONDITION-BASED MONITORING SYSTEM FOR ROTATING EQUIPMENT", style={"text-align": "center","margin": "20px"}),
         navbar,
         dcc.Store(id="memory2"),    # Store component for storing data
-        dcc.Store(id="memory3"),
+        dcc.Store(id="filter_mem"), # Store component for storing filter data
+        dcc.Store(id="filt_x_mem"), # Store component for storing filtered data        html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"}, children=[file_option]),
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
-            [              
-                # content
-                html.Div(className="container-fluid",children=[
-                    html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"}, children=[file_option]),
-                    html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"},children=[offcanvas_left_2]),                    
-                     # col 1
-                        html.Div(className="col-xl-6 d-flex", style={}, children=[
-                            html.Div(className="w-100", children=[
-                                # graph 1
-                                html.Div(className="row",style={'padding-bottom':'20px'}, children=[
-                                    html.Div(className="", children=[
-                                        html.Div(className="card", children=[
-                                            html.Div(className="card-body", children=[
-                                                html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
-                                                html.Div(className="row", children=[dcc.Graph(id="graph_1",style={'height':'250px'})])
-                                            ])
-                                        ]),
-                                        html.Div(className="card")
+            [               
+            # content
+            html.Div(className="container-fluid",children=[
+                html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"}, children=[file_option]),
+                html.Div(className="header d-grid gap-2 d-md-flex justify-content-md-center",style={"padding":"10px"},children=[offcanvas_left_2]),
+                # row 1
+                html.Div(className="row",style={},children=[
+                    # col 1
+                    html.Div(className="col-xl-6 d-flex", style={}, children=[
+                        html.Div(className="w-100", children=[
+                            # graph 1
+                            html.Div(className="row",style={'padding-bottom':'20px'}, children=[
+                                html.Div(className="", children=[
+                                    html.Div(className="card", children=[
+                                        html.Div(className="card-body", children=[
+                                            html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
+                                            html.Div(className="row", children=[dcc.Graph(id="graph_1",style={'height':'250px'})])
+                                        ])
                                     ]),
+                                    html.Div(className="card")
                                 ]),
-                                # graph 2
-                                html.Div(className="row", children=[
-                                    html.Div(className="", children=[
-                                        html.Div(className="card", children=[
-                                            html.Div(className="card-body", children=[
-                                                html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
-                                                html.Div(className="row", children=[dcc.Graph(id="graph_2",style={'height':'250px'})])
-                                            ])
+                            ]),
+                            # graph 2
+                            html.Div(className="row", children=[
+                                html.Div(className="", children=[
+                                    html.Div(className="card", children=[
+                                        html.Div(className="card-body", children=[
+                                            html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
+                                            html.Div(className="row", children=[dcc.Graph(id="graph_2",style={'height':'250px'})])
                                         ])
                                     ])
-                                ]),
-                            ])
-                        ]),
-                        # col 2
-                        html.Div(className="col-xl-6", children=[
-                            html.Div(className="card", children=[
-                                html.Div(className="card-body", children=[
-                                    html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
-                                    html.Div(className="row", children=[dcc.Graph(id="graph_spec",style={'height':'575px'})])
                                 ])
-                            ])
+                            ]),
                         ])
                     ]),
+                    # col 2
+                    html.Div(className="col-xl-6", children=[
+                        html.Div(className="card", children=[
+                            html.Div(className="card-body", children=[
+                                html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
+                                html.Div(className="row", children=[dcc.Graph(id="graph_spec",style={'height':'575px'})])
+                            ])
+                        ])
+                    ])
+                ]),
                 
-                # footer
+            ])
+            # footer
             ]
         )
     ]
@@ -103,7 +107,7 @@ layout = html.Div(
 )
 def update_memory_hd(filename):
 
-    data = execute_read_query("SELECT data FROM memory2 WHERE filename = %s", (filename, ))
+    data = execute_read_query("SELECT data FROM memory1 WHERE filename = %s", (filename, ))
     # print(data)
     # print(filename)
     return {"filename": filename, "data": data}   # print --> {'filename': 'y2016-m09-d20-04-06-52.nc'}
