@@ -48,9 +48,15 @@ def create_list_radio(files, id_name):
         radio_options.append(               # Create a radio item option for each file and add it to the list
             {"label": file, "value": file}  # Use the file name as both the label and value of the option
         )
+
+    if not files:
+        default_value = None
+    else:
+        default_value = files[0]
+
     radio = dbc.RadioItems(                 # Create a RadioItems component from the Dash Bootstrap Components library
         options=radio_options,              # Set the options of the radio items to the list of radio item options
-        value=files[0],                     # Set the initial value of the radio items to the first file in the list
+        value=default_value,                     # Set the initial value of the radio items to the first file in the list
         id=id_name
     )
     return radio
@@ -152,6 +158,19 @@ right_panel = html.Div(
     ]
 )
 
+# Contains input boxes for the sampling frequency and NFFT values
+right_panel_2 = html.Div(
+    [
+        create_input_box("Sampling Frequency: ", "fs_2", "50000", 50000),
+        create_input_box("NFFT: ", "nfft_2", "2048", 2048),
+
+        create_checkbox("Filter:", [0], "filter_apply_2", 0, True),
+        create_drop_down("Window type", FILTERS, "filter_type_2", 11),
+        create_input_box("Cut off 1", "fc_1_1", "0", 0),
+        create_input_box("Cut off 2", "fc_2_2", "500", 500),
+    ]
+)
+
 # Contains checkbox, dropdown menu, input boxes, and two graphs for filter-related options and visualizations
 filter_panel = html.Div(
     [
@@ -159,7 +178,5 @@ filter_panel = html.Div(
         create_drop_down("Window type", FILTERS, "filter_type", 11),
         create_input_box("Cut off 1", "fc_1", "0", 0),
         create_input_box("Cut off 2", "fc_2", "500", 500),
-        # dcc.Graph(id="graph_3", style={"height": "29vh"}),
-        # dcc.Graph(id="graph_4", style={"height": "29vh"})
     ],
 )

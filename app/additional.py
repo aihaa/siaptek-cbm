@@ -99,23 +99,23 @@ offcanvas_left_2 = html.Div(
                                                 style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
                                             ),
 
-                                            # Create a heading for the data variables section
-                                            html.H6("Data variables"),
-                                            # Create a div container for the variable list with an ID and styling
-                                            html.Div(
-                                                id="variable_list2",
-                                                children=[],
-                                                style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
-                                            ),
+                                            # # Create a heading for the data variables section
+                                            # html.H6("Data variables"),
+                                            # # Create a div container for the variable list with an ID and styling
+                                            # html.Div(
+                                            #     id="variable_list2",
+                                            #     children=[],
+                                            #     style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
+                                            # ),
 
-                                            # Create a heading for the variable contents section
-                                            html.H6("Variable contents"),
-                                            # Create a div container for the variable content with an ID and styling
-                                            html.Div(
-                                                id="variable_content2",
-                                                children=[],
-                                                style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
-                                            ),
+                                            # # Create a heading for the variable contents section
+                                            # html.H6("Variable contents"),
+                                            # # Create a div container for the variable content with an ID and styling
+                                            # html.Div(
+                                            #     id="variable_content2",
+                                            #     children=[],
+                                            #     style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
+                                            # ),
                                         ],
                                         id="File_contents",
                                         style={"marginTop": "2px", "marginBottom": "2px"}
