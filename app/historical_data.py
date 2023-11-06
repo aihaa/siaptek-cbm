@@ -68,7 +68,7 @@ layout = html.Div(
                                     html.Div(className="card", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
-                                            html.Div(className="row", children=[dcc.Graph(id="graph2_2",style={'height':'250px'})])
+                                            html.Div(className="row", children=[dcc.Graph(id="graph2_2",style={'max-height':'250px'})])
                                         ])
                                     ])
                                 ])
@@ -80,7 +80,7 @@ layout = html.Div(
                         html.Div(className="card", children=[
                             html.Div(className="card-body", children=[
                                 html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
-                                html.Div(className="row", children=[dcc.Graph(id="graph_spec2",style={'height':'575px'})])
+                                html.Div(className="row", children=[dcc.Graph(id="graph_spec2",style={'height':'600px'})])
                             ])
                         ])
                     ])
@@ -198,7 +198,12 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
 
         fs = int(fs)
 
-        print(mem_data.keys())
+        print(mem_data['data']['data_vars']['vib'].keys())
+        print(mem_data['data']['attrs'])
+        print(mem_data['data']['data_vars']['vib'].keys())
+        print(mem_data['data']['data_vars']['vib']['dims']) # ['vibDim']
+        print(mem_data['data']['data_vars']['vib']['attrs']) # {'Fs': 51200, 'unit': 'm/s2', 'unitscale': 98.10000000000001}
+        print(mem_data['data']['data_vars']['vib']['attrs']['unit'])
 
         # extract data narrowed to var_list_radio option
         var_data = mem_data['data']['data_vars']['vib']["data"]
@@ -212,7 +217,11 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
 
         # Create a Figure object to plot the raw measurement
         fig = go.Figure(
-            layout={"xaxis":{"title":"time"}}
+            layout={
+                "xaxis": {"title": "Time (s)"},  # Assuming time is in seconds
+                "yaxis": {"title": "Vibration (m/s)"}  # Include the unit in the y-axis title
+            }
+            
         )
         fig.add_trace(
             go.Scatter(
@@ -312,8 +321,7 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
      ])
 def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
     if mem_data is None:
-        # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
-        # return html.Div([suggestion])
+
         raise dash.exceptions.PreventUpdate
 
     else:
@@ -379,6 +387,10 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
         fig.update_layout(xaxis_rangeslider_visible=False,
                         margin=dict(l=10, r=10, t=20, b=20),
                         legend=dict(yanchor="top", y=1, xanchor="left", x=0))
+
+       # Add x-axis and y-axis labels
+        fig.update_xaxes(title_text='Frequency (Hz)') 
+        fig.update_yaxes(title_text='Amplitude (m/s²)')     
 
         # Create a heatmap Figure object for the spectrogram
         trace = [go.Heatmap(
