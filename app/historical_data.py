@@ -56,7 +56,7 @@ layout = html.Div(
                                     html.Div(className="card", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
-                                            html.Div(className="row", children=[dcc.Graph(id="graph_1_2",style={'height':'250px'})])
+                                            html.Div(className="row", children=[dcc.Graph(id="graph2_1",style={'height':'250px'})])
                                         ])
                                     ]),
                                     html.Div(className="card")
@@ -68,7 +68,7 @@ layout = html.Div(
                                     html.Div(className="card", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
-                                            html.Div(className="row", children=[dcc.Graph(id="graph_2",style={'height':'250px'})])
+                                            html.Div(className="row", children=[dcc.Graph(id="graph2_2",style={'height':'250px'})])
                                         ])
                                     ])
                                 ])
@@ -80,7 +80,7 @@ layout = html.Div(
                         html.Div(className="card", children=[
                             html.Div(className="card-body", children=[
                                 html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
-                                html.Div(className="row", children=[dcc.Graph(id="graph_spec",style={'height':'575px'})])
+                                html.Div(className="row", children=[dcc.Graph(id="graph_spec2",style={'height':'575px'})])
                             ])
                         ])
                     ])
@@ -93,13 +93,6 @@ layout = html.Div(
     ]
 )
 
-
-# '''
-# 1. when choose 'file_options' --> file name will be setup
-# 2. when filename has been set (act as input), --> data visualzation will be triggered (will be automatically shown)
-# '''
-
-# predefined_list = ['Variable A', 'Variable B']
 
 @callback(
     Output("memory2", "data"), ## IMPORTANT! store files_dropdown value into memory2 dcc.store --> to be used globally.. cannot ask system to print it!!
@@ -116,54 +109,14 @@ def update_memory_hd(filename):
 
             mem_data = data['object1'][0]
 
-            # print("mem_data['data']:")
-            # print(type(data))
-            # print(data.keys())
-            # print(data['object1'].keys())
-            # print(type(data['object1'])) # <tuple>
-            # print(type(data['object1'][0])) # <dict>
-            # print(mem_data.keys()) # dict_keys(['dims', 'attrs', 'coords', 'data_vars'])
-            print(mem_data.keys())
+            print(mem_data.keys()) # dict_keys(['dims', 'attrs', 'coords', 'data_vars'])
 
 
-        return {"filename": filename, "data": mem_data}   # print --> {'filename': 'y2016-m09-d20-04-06-52.nc'}
+        return {"filename": filename, "data": mem_data}  
 
     else:
         return {"filename": None, "data": None}
 
-# @callback(
-#     Output("variable_list2", "children"),
-#     [Input("memory2", "data")]
-# )
-# def update_variable_list2(mem_data):
-
-#     print(type(mem_data['data']))
-
-#     # if mem_data is None:
-#     #     raise dash.exceptions.PreventUpdate
-#     # else:
-#     #     # mem_data['data'] = json.loads(mem_data['data'])
-#     #     print(type(mem_data['data'])) 
-        
-
-#     #     var_list = list(mem_data['data']['data_vars'].keys())
-#     #     var_buttons = create_list_radio(var_list, "var_list_radio")
-
-
-
-
-#     # Initialize an empty list to hold the keys from 'data_vars'
-#     var_list = []
-
-#     if isinstance(mem_data['data'], list):
-#         for item in mem_data['data']:
-#             if 'data_vars' in item:
-#                 var_list.extend(item['data_vars'].keys())
-
-#     var_buttons = create_list_radio(var_list, "var_list_radio")
-    
-
-#     return var_buttons
 
 @callback(
     Output("metadata2", "children"),
@@ -229,7 +182,7 @@ def plot_filter(filter_type_2, n_fft, fs, fc_1, fc_2):
 
 
 @callback(
-    Output("graph_1_2", "figure"),
+    Output("graph2_1", "figure"),
     Output("filt_x_mem_2", "data"),
     [Input("memory2", "data"),
     Input("fs", "value"),
@@ -342,4 +295,104 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
             
 
         return fig, filt_x
+
+
+
+
+# Purpose: Allow users to select a variable, adjust the sampling frequency and FFT size,
+#                       and visualize the time-domain plot and spectrogram plot for selected variable
+@callback(
+    Output('graph2_2', 'figure'),
+    Output("graph_spec2", "figure"),
+    [Input("memory2", "data"),
+     Input("fs", "value"),
+     Input("nfft", "value"),
+     Input('graph2_1', 'relayoutData'),
+     Input("filt_x_mem_2", "data")
+     ])
+def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
+    if mem_data is None:
+        # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
+        # return html.Div([suggestion])
+        raise dash.exceptions.PreventUpdate
+
+    else:
+        fs = int(fs)
+        nfft = int(nfft)
+        var_data = mem_data['data']['data_vars']['vib']["data"]
+        # df = pd.DataFrame(
+        #     data=var_data,
+        #     index=np.linspace(0, len(var_data) / fs, len(var_data)),
+        #     columns=['vib']
+        # )
+
+        # Check if a range selection has been made on the x-axis of graph_1
+        if 'xaxis.range[0]' in relayoutData:
+            start = int(relayoutData["xaxis.range[0]"] * fs)
+            end = int(relayoutData["xaxis.range[1]"] * fs)
+        else:
+            start = 0
+            end = fs
+
+        # Calculate the FFT (Fast Fourier Transform) of the selected variable data within the specified range
+        fft_df = calculate_fft(np.array(var_data[start:end]), nfft, fs)
+
+        # Create a Figure object to plot the frequency spectrum
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                name='Frequency spectrum',
+                x=fft_df["Frequency"],
+                y=fft_df["Amplitude"],
+                mode="lines",
+                line=dict(
+                    color="blue"
+                )
+            )
+        )
+
+        # Calculate the spectrogram of the selected variable data within the specified range
+        freqs, t, Pxx = signal.spectrogram(np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+
+        # Check if there is filtered data available
+        if filt_x["filtered"] is not None:
+            # Calculate the FFT of the filtered data within the specified range
+            fft_filt = calculate_fft(np.array(filt_x["filtered"][start:end]), nfft, fs)
+
+            # Add the filtered frequency spectrum to the Figure object for plotting
+            fig.add_trace(
+                go.Scatter(
+                    name='Frequency spectrum (Filtered)',
+                    x=fft_filt["Frequency"],
+                    y=fft_filt["Amplitude"],
+                    mode="lines",
+                    line=dict(
+                        color="red"
+                    )
+                )
+            )
+
+            # Calculate the spectrogram of the filtered data within the specified range
+            freqs, t, Pxx = signal.spectrogram(np.array(filt_x["filtered"][start:end]), fs=fs, nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+
+        # Customize the layout of the Figure object
+        fig.update_layout(xaxis_rangeslider_visible=False,
+                        margin=dict(l=10, r=10, t=20, b=20),
+                        legend=dict(yanchor="top", y=1, xanchor="left", x=0))
+
+        # Create a heatmap Figure object for the spectrogram
+        trace = [go.Heatmap(
+            x=t,
+            y=freqs,
+            z=10 * np.log10(Pxx),
+            colorscale='Jet',
+        )]
+        layout = go.Layout(
+            yaxis=dict(title='Frequency'),  # x-axis label
+            xaxis=dict(title='Time'),  # y-axis label
+        )
+        fig2 = go.Figure(data=trace, layout=layout)
+
+        return fig, fig2
+
 
