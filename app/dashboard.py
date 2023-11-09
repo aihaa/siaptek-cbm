@@ -7,6 +7,7 @@ from utils import parse_contents, calculate_fft, get_ftaps
 
 from dash import callback
 from dash.dependencies import Input, Output, State
+from dash import html, dcc
 from dash.exceptions import PreventUpdate
 # import dash_bootstrap_components as dbc
 from dash_bootstrap_templates import load_figure_template
@@ -18,7 +19,7 @@ from scipy import signal
 # import pymysql
 import psycopg2
 from navbar import navbar
-from additional import offcanvas_left
+# from additional import offcanvas_left
 from db_operations import *
 import json
 
@@ -27,208 +28,153 @@ load_figure_template('LUX')
 # Create a Dash app
 #app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
+container_style = {'width': '50%', 'height': '50%', 'display': 'inline-block'}
 
 #--------------------------------------------------(LAYOUT)------------------------------------------------------------------------
 
-# Define the layout of the app
+perm_data = {}
+def mem_data(filename):
+    try:
+        data = execute_read_query("SELECT data FROM memory1 WHERE filename = %s", (filename, ))
+        if isinstance(data, list):
+            mem_data = {}
+            for item in data:
+                data = {f'object{i}': item for i, item in enumerate(data, start=1)} # <dict>
+                mem_data = data['object1'][0]
+                perm_data = mem_data
+                print("mem_data.keys():")
+                print(mem_data.keys()) # dict_keys(['dims', 'attrs', 'coords', 'data_vars'])
+            return {"filename": filename, "data": mem_data}  
+        else:
+            return {"filename": None, "data": None}
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return {"filename": None, "data": None}
+
+filename = 'y2016-m09-d20-03-31-36.nc'
+memory1 = mem_data(filename)['data']['data_vars']['vib']["data"]
+memory2 = mem_data(filename)['data']['data_vars']['tach']["data"]
+
+
 layout = html.Div(
     [
         dcc.Location(id='url', refresh=True, pathname='/dashboard'),
         html.H4("CONDITION-BASED MONITORING SYSTEM FOR ROTATING EQUIPMENT", style={"text-align": "center","margin": "20px"}),
-        # navbar
         navbar,
-        # html.Div(id="navbar-collapse"),
-        # main
-        dcc.Store(id="memory1"),    # Store component for storing data
-        dcc.Store(id="filter_mem"), # Store component for storing filter data
-        dcc.Store(id="filt_x_mem"), # Store component for storing filtered data
+        dcc.Interval(id="interval_component", interval=1*1000, n_intervals=0, max_intervals=50000),
+        dcc.Store(id="memory1", data=memory1),
+        dcc.Store(id="memory2", data=memory2),
+        dcc.Store(id="fs", data=5000),
+        dcc.Store(id="nfft", data=2048),
+        dcc.Store(id="stored_data1"),
+        dcc.Store(id="stored_data2"),
+        html.Div(id="index_holder", style={"display": "none"}, children=0),
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
             [               
             # content
             html.Div(className="container-fluid",children=[
-                html.Div(className="header d-grid gap-2 d-md-flex justify-content-md-center",style={"padding":"10px"},children=[offcanvas_left]),
-                # row 1
-                html.Div(className="row",style={},children=[
-                    # col 1
-                    html.Div(className="col-xl-6 d-flex", style={}, children=[
-                        html.Div(className="w-100", children=[
-                            # graph 1
-                            html.Div(className="row",style={'padding-bottom':'20px'}, children=[
-                                html.Div(className="", children=[
-                                    html.Div(className="card", children=[
+                html.Div(id="metadata"),
+                html.Div(
+                    style={'display': 'flex', 'flexWrap': 'wrap', 'height': '100vh'},
+                    children=[
+                        # Container 1 (Top-left)
+                        html.Div(
+                            style=container_style,  # Each div will take half of the page width and height
+                            children=[
+                                html.Div(className="card", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_1",style={'height':'250px'})])
                                         ])
                                     ]),
-                                    html.Div(className="card")
-                                ]),
-                            ]),
-                            # graph 2
-                            html.Div(className="row", children=[
-                                html.Div(className="", children=[
-                                    html.Div(className="card", children=[
+                            ]
+                        ),
+                        # Container 2 (Top-right)
+                        html.Div(
+                            style=container_style,
+                            children=[
+                                html.Div(className="card", children=[
+                                        html.Div(className="card-body", children=[
+                                            html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
+                                            html.Div(className="row", children=[dcc.Graph(id="graph_3",style={'height':'250px'})])
+                                        ])
+                                    ])
+                            ]
+                        ),
+                        # Container 3 (Bottom-left)
+                        html.Div(
+                            style=container_style,
+                            children=[
+                                html.Div(className="card", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_2",style={'height':'250px'})])
                                         ])
                                     ])
-                                ])
-                            ]),
-                        ])
-                    ]),
-                    # col 2
-                    html.Div(className="col-xl-6", children=[
-                        html.Div(className="card", children=[
-                            html.Div(className="card-body", children=[
-                                html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
-                                html.Div(className="row", children=[dcc.Graph(id="graph_spec",style={'height':'575px'})])
-                            ])
-                        ])
-                    ])
-                ]),
-                
+                            ]
+                        ),
+                        # Container 4 (Bottom-right)
+                        html.Div(
+                            style=container_style,
+                            children=[
+                                html.Div(className="card", children=[
+                                        html.Div(className="card-body", children=[
+                                            html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
+                                            html.Div(className="row", children=[dcc.Graph(id="graph_4",style={'height':'250px'})])
+                                        ])
+                                    ])
+                            ]
+                        ),
+                    ]
+                ),                
             ])
-            # footer
             ]
         )
     ]
 )
 
-
-
-# Purpose: Ensures that variable_list is always synchronized with the data stored in memory1
-@callback(
-    Output("variable_list", "children"),
-    [Input("memory1", "data")],
-)
-def update_variable_list(mem_data):
-
-    if mem_data is None:
-        raise dash.exceptions.PreventUpdate
-    else:
-        var_list = list(mem_data['data']['data_vars'].keys())
-        var_buttons = create_list_radio(var_list, "var_list_radio")
-
-        return var_buttons
-
-
-
-
-
 # Purpose: To ensure that metadata is always synchronized with data stored in memoery1 
 #               -- allows user to see summary of metadata associated with the variables they analyze
-@callback(
-    Output("metadata", "children"),
-    [Input("memory1", "data")],
-)
-def update_metadata(mem_data):
-
-    meta_head = pd.Series(mem_data['data']).head(5)
-    print(meta_head)
-
-    return str(meta_head)
-
-
-# predefined_data = {
-#     'data_vars': {
-#         'Variable A': {'type': 'categorical'},
-#         'Variable B': {'type': 'numeric'}
-#     },
-#     'metadata': {
-#         'description': 'Predefined dataset',
-#         'author': 'Aiman Fatihah',
-#     }
-# }
-
-# Purpose: To ensure that variable_content is always synchronized with selected varible and data stored in memory1
-#           -- allow user to see detailed information about the selected varible and explore its content
-@callback(
-    Output("variable_content", "children"),
-    [
-    Input("var_list_radio", "value"),
-     Input("memory1", "data")]
-)
-def update_variable_content(radio_value, mem_data):
-
-    if mem_data is None and radio_value is None:
-        # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
-        # return html.Div([suggestion])
-        raise dash.exceptions.PreventUpdate
-    else: 
-        head_dict = pd.Series(mem_data['data']['data_vars'][radio_value]).head()
-
-        return str(head_dict)
-
-
-
-# Purpose: allows user to upload a file, stores the content in system's memory (memory1), and displays the selected file
-@callback(
-    Output("memory1", "data"),
-    Output("selected_file", "children"),
-    [Input("upload", "contents"), 
-     Input("upload", "filename")],
-)
-def update_memory(contents, filename):
-    if not contents:
-        raise PreventUpdate
-    
-    file_contents = parse_contents(contents, filename).to_dict()
-
-    try:
-        execute_create_query("""
-        CREATE TABLE IF NOT EXISTS memory1 (
-            id SERIAL PRIMARY KEY, 
-            filename VARCHAR(255), 
-            data JSONB
-        )
-        """)
-    except Exception as e:
-        print(f"Error creating table: {e}")
-
-    # Check if the filename already exists
-    result = execute_read_query("SELECT filename FROM memory1 WHERE filename = %s", (filename,))
-
-    if result:
-        # File already exists, update the data
-        sql = "UPDATE memory1 SET data = %s WHERE filename = %s"
-        val = (json.dumps(file_contents), filename)
-        execute_update_query(sql, val)
-    else:
-        # File doesn't exist, insert the data
-        sql = "INSERT INTO memory1 (filename, data) VALUES (%s, %s)"
-        val = (filename, json.dumps(file_contents))
-        execute_create_query(sql, val)
-
-
-    return dict({'filenames': filename, 'data': file_contents}), f"File: {filename}"
-
-
-
-
-
-#-------------------------------------------------------------------------------------------
 # @callback(
-#         Output("output","children"),
-#         Input("memory1","data")
+#     Output("metadata", "children"),
+#     [Input("memory1", "data")],
 # )
-# def convert_and_store_to_mysql(mem_data):
+# def update_metadata(mem_data):
 
-#     filename = mem_data['filenames']
-#     data = mem_data['data']
+#     meta_head = pd.Series(mem_data['data']).head(5)
+#     print(meta_head)
 
-#     cursor.execute(f"CREATE TABLE IF NOT EXISTS {filename} (data TEXT)")
+#     return str(meta_head)
 
-#     cursor.execute(f"INSERT INTO {filename} (data) VALUES (%s)", (data, ))
 
-#     # connection.commit()
-#     # cursor.close()
-#     # connection.close()
-    
-#     return "Data stored in MySQL successfully"
+@callback(
+    Output("stored_data1","data"),
+    Output("stored_data2","data"),
+    Output("index_holder", "children"),
+    Input("interval_component", "n_intervals"),
+    State("memory1", "data"),
+    State("memory2", "data"),
+    State("index_holder", "children"),
+    State("stored_data1", "data"),
+    State("stored_data2","data"),
+)
+def update_data(n, memory1, memory2, current_index, stored_data1, stored_data2):
+    if not stored_data1:
+        stored_data1 = []
+    if not stored_data2:
+        stored_data2 = []
 
-    
-#-------------------------------------------------------------------------------------------
+    if memory1 and memory2:
+        current_index = int(current_index)
+        min_length = min(len(memory1), len(memory2))
+        if current_index < min_length:
+            stored_data1.append(memory1[current_index])
+            stored_data2.append(memory2[current_index])
+            current_index += 1
+        else:
+            current_index = 0
+
+    return stored_data1, stored_data2, current_index
 
 
 '''
@@ -240,116 +186,52 @@ Allow users to:
 
 @callback(
     Output("graph_1", "figure"),
-    Output("filt_x_mem", "data"),
-    [Input("memory1", "data"),
-    Input("var_list_radio", "value"),
-    Input("fs", "value"),
-    Input("filter_apply", "value"),
-    Input("filter_mem", "data")]
+    Output("graph_3", "figure"),
+    [Input("stored_data1", "data"),
+    Input("stored_data2", "data"),
+    State("fs", "data"),]
 )
-def update_td_plot(mem_data, selected_var, fs, fil_val, fil_taps):
-    if mem_data is None and selected_var is None or fil_val is None or fil_taps is None:
-        # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
-        # return html.Div([suggestion])
+def update_td_plot(stored_data1, stored_data2, fs):
+    if stored_data1 is None or stored_data2 is None:
         raise dash.exceptions.PreventUpdate
     else:
         fs = int(fs)
 
-        # extract data narrowed to var_list_radio option
-        var_data = mem_data['data']['data_vars'][selected_var]["data"]
-        df = pd.DataFrame(
-            data=var_data,
-            index=np.linspace(0, 
-                            len(var_data)/fs, 
-                            len(var_data)),
-            columns=[selected_var]
+        df1 = pd.DataFrame(
+            data = stored_data1,
+            index=np.linspace(0, len(stored_data1) / fs, len(stored_data1)),
+            columns=['vib']
         )
-
-        # Create a Figure object to plot the raw measurement
-        fig = go.Figure(
-            layout={"xaxis":{"title":"time"}}
-        )
-        fig.add_trace(
+        fig1 = go.Figure()
+        fig1.add_trace(
             go.Scatter(
-            name="Raw Measurement",
-            x=df.index,
-            y=df[selected_var],
-            mode="lines",
-            line=dict(
-                color="blue"
-            )
-            )
-        )
-        fig.update_layout
-        print(fil_val,fil_taps)
-
-
-
-        # check if a filter is applied
-        if type(fil_val) is list and len(fil_val) > 0:
-
-            filtered = signal.lfilter(
-                fil_taps["taps"],
-                1.0,
-                df[selected_var]
-            )
-            delay = 0.5*(len(fil_taps["taps"]) - 1) / fs
-            print(f"delay--{delay}")
-
-
-            indices = df.index[:-int((len(fil_taps["taps"]) - 1) / 2)]
-            # create filtered df with appropriate indexing and column name
-            df_filt = pd.DataFrame(
-                data= filtered[int( (len(fil_taps["taps"]) - 1) /2 ):],
-                index= df.index[: -int( (len(fil_taps["taps"]) - 1) /2)],
-                columns=["filtered"]
-            )
-            print(df_filt.head(10))
-
-
-            # update the figure after filter is applied
-            fig.add_trace(
-                go.Scatter(
-                name='Filtered',
-                x=df_filt.index,
-                y=df_filt["filtered"],
+                name="Vibration Measurement",
+                x=df1.index,
+                y=df1['vib'],
                 mode="lines",
-                line=dict(
-                    color="red"
-                )
-                )
-            )
-
-            filt_x = {
-                "filtered": filtered[int((len(fil_taps["taps"]) - 1) / 2):], 
-                "index": indices
-            }
-        else:
-            # no filter is applied
-                        filt_x = {
-                            "filtered":None,
-                            "index":None
-                        }
-        # update the figure after filter is disabled
-        fig.update_layout(
-            xaxis_rangeslider_visible=False,
-            margin=dict(
-                l=10,
-                r=10,
-                t=20,
-                b=20
-            ),
-            legend=dict(
-                yanchor="top",
-                y=1,
-                xanchor="left",
-                x=0
+                line=dict(color="blue")
             )
         )
+        fig1.update_layout(title="Vibration Data", xaxis_title="Time (s)", yaxis_title="Vibration (m/s²)")
 
-            
+        df2 = pd.DataFrame(
+            data=stored_data2,
+            index=np.linspace(0, len(stored_data2) / fs, len(stored_data2)),
+            columns=['tach']
+        )
+        fig2 = go.Figure()
+        fig2.add_trace(
+            go.Scatter(
+                name="Tachometer Measurement",
+                x=df2.index,
+                y=df2['tach'],
+                mode="lines",
+                line=dict(color="blue")
+            )
+        )
+        fig2.update_layout(title="Tachometer Data", xaxis_title="Time (s)", yaxis_title="Tachometer (BRM)")
 
-        return fig, filt_x
+        return fig1, fig2
 
 
 
@@ -358,174 +240,45 @@ def update_td_plot(mem_data, selected_var, fs, fil_val, fil_taps):
 #                       and visualize the time-domain plot and spectrogram plot for selected variable
 @callback(
     Output('graph_2', 'figure'),
-    Output("graph_spec", "figure"),
-    [Input("memory1", "data"),
-     Input("var_list_radio", "value"),
-     Input("fs", "value"),
-     Input("nfft", "value"),
-     Input('graph_1', 'relayoutData'),
-     Input("filt_x_mem", "data")
+    Output('graph_4', 'figure'),
+    [Input('graph_1', 'relayoutData'),
+     Input('graph_3', 'relayoutData'),
+    Input("stored_data1", "data"),
+    Input("stored_data2", "data"),
+     State("fs", "data"),
+     State("nfft", "data"),
      ])
-def update_fd_plot(mem_data, selected_var, fs, nfft, relayoutData, filt_x):
-    if mem_data is None and selected_var is None:
-        # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
-        # return html.Div([suggestion])
+def update_fd_plot(relayoutData1, relayoutData2, stored_data1, stored_data2, fs, nfft):
+    if stored_data1 is None and stored_data2 is None:
         raise dash.exceptions.PreventUpdate
 
     else:
         fs = int(fs)
         nfft = int(nfft)
-        var_data = mem_data['data']['data_vars'][selected_var]["data"]
-        # df = pd.DataFrame(
-        #     data=var_data,
-        #     index=np.linspace(0, len(var_data) / fs, len(var_data)),
-        #     columns=[selected_var]
-        # )
 
-        # Check if a range selection has been made on the x-axis of graph_1
-        if 'xaxis.range[0]' in relayoutData:
-            start = int(relayoutData["xaxis.range[0]"] * fs)
-            end = int(relayoutData["xaxis.range[1]"] * fs)
-        else:
-            start = 0
-            end = fs
+        def create_fft_figure(data, fs, nfft, relayoutData):
+            if relayoutData and 'xaxis.range[0]' in relayoutData:
+                start = int(float(relayoutData["xaxis.range[0]"]) * fs)
+                end = int(float(relayoutData["xaxis.range[1]"]) * fs)
+            else:
+                start = 0
+                end = len(data)
 
-        # Calculate the FFT (Fast Fourier Transform) of the selected variable data within the specified range
-        fft_df = calculate_fft(np.array(var_data[start:end]), nfft, fs)
-
-        # Create a Figure object to plot the frequency spectrum
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                name='Frequency spectrum',
-                x=fft_df["Frequency"],
-                y=fft_df["Amplitude"],
-                mode="lines",
-                line=dict(
-                    color="blue"
-                )
-            )
-        )
-
-        # Calculate the spectrogram of the selected variable data within the specified range
-        freqs, t, Pxx = signal.spectrogram(np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
-
-        # Check if there is filtered data available
-        if filt_x["filtered"] is not None:
-            # Calculate the FFT of the filtered data within the specified range
-            fft_filt = calculate_fft(np.array(filt_x["filtered"][start:end]), nfft, fs)
-
-            # Add the filtered frequency spectrum to the Figure object for plotting
+            fft_df = calculate_fft(np.array(data[start:end]), nfft, fs)
+            fig = go.Figure()
             fig.add_trace(
                 go.Scatter(
-                    name='Frequency spectrum (Filtered)',
-                    x=fft_filt["Frequency"],
-                    y=fft_filt["Amplitude"],
+                    name='Frequency Spectrum',
+                    x=fft_df["Frequency"],
+                    y=fft_df["Amplitude"],
                     mode="lines",
-                    line=dict(
-                        color="red"
-                    )
+                    line=dict(color="blue")
                 )
             )
+            fig.update_layout(title="Frequency Domain Data", xaxis_title="Frequency (Hz)", yaxis_title="Amplitude")
+            return fig
 
-            # Calculate the spectrogram of the filtered data within the specified range
-            freqs, t, Pxx = signal.spectrogram(np.array(filt_x["filtered"][start:end]), fs=fs, nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+        fig1 = create_fft_figure(stored_data1, fs, nfft, relayoutData1)
+        fig2 = create_fft_figure(stored_data2, fs, nfft, relayoutData2)
 
-        # Customize the layout of the Figure object
-        fig.update_layout(xaxis_rangeslider_visible=False,
-                        margin=dict(l=10, r=10, t=20, b=20),
-                        legend=dict(yanchor="top", y=1, xanchor="left", x=0))
-
-        # Create a heatmap Figure object for the spectrogram
-        trace = [go.Heatmap(
-            x=t,
-            y=freqs,
-            z=10 * np.log10(Pxx),
-            colorscale='Jet',
-        )]
-        layout = go.Layout(
-            yaxis=dict(title='Frequency'),  # x-axis label
-            xaxis=dict(title='Time'),  # y-axis label
-        )
-        fig2 = go.Figure(data=trace, layout=layout)
-
-        return fig, fig2
-
-
-
-
-# Purpose: To select file type and adjust the cutoff frequency and visualize them corresponding to the filter taps and frequency response
-@callback(
-        Output("filter_mem", "data"),
-        [Input("filter_type", "value"),
-        Input("nfft", "value"),
-        Input("fs", "value"),
-        Input("fc_1", "value"),
-        Input("fc_2", "value")])
-def plot_filter(filter_type, n_fft, fs, fc_1, fc_2):
-    fs = float(fs)
-    fc_1 = int(fc_1)
-    fc_2 = int(fc_2)
-    n_fft = int(n_fft)
-
-    # Get the filter taps based on the selected filter type, n_fft, and cutoff frequencies
-    y = get_ftaps(filter_type, n_fft + 1, fc_1, fc_2, fs)
-    print(y)
-
-    # Create a Figure object to plot the filter tap
-    # fig = go.Figure()
-    # fig.add_trace(
-    #     go.Scatter(
-    #         name="Filter taps",
-    #         y=y,
-    #         mode="lines+markers",
-    #         line=dict(
-    #             color="blue"
-    #         )
-    #     )
-    # )
-
-    # Customize the layout of the Figure object
-    # fig.update_layout(xaxis_rangeslider_visible=False,
-    #                   margin=dict(l=5, r=5, t=5, b=5),
-    #                   xaxis=go.XAxis(showticklabels=False),
-    #                   legend=dict(yanchor="top", y=1, xanchor="left", x=0))
-
-    # # Calculate the frequency response of the filter taps
-    # w, h = signal.freqz(y, worN=int(fs / 2))
-
-    # # Create another Figure object to plot the frequency response
-    # fig2 = go.Figure()
-    # fig2.add_trace(
-    #     go.Scatter(
-    #         name="Filter taps",
-    #         x=(w / np.pi) * (fs / 2),
-    #         y=20 * np.log10(abs(h)),
-    #         mode="lines",
-    #         line=dict(
-    #             color="blue"
-    #         )
-    #     )
-    # )
-
-    # # Customize the layout of the Figure object
-    # fig2.update_layout(xaxis_rangeslider_visible=False,
-    #                    margin=dict(l=5, r=5, t=5, b=5),
-    #                    xaxis=go.XAxis(title='Frequency'),
-    #                    yaxis=go.XAxis(title='Magnitude (dB)')
-    #                    )
-
-    # Store the filter taps in filter_mem_data
-    filter_mem_data = {
-        "taps": y
-    }
-    return filter_mem_data
-
-
-# if connection:
-#     print("Connected dashboard to the server...")
-
-# connection.commit()
-
-# cursor.close()
-# connection.close()
+        return fig1, fig2
