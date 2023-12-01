@@ -12,7 +12,9 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy import signal
 
+import stream_vibration_data
 import login_page
+import registration_page
 import dashboard
 import historical_data
 
@@ -32,12 +34,16 @@ app.layout = html.Div([
 @app.callback(Output('page-content','children'),
               Input('url','pathname'))
 def display_page(pathname):
-    if pathname == '/login_page':
+    if pathname == '/login':
         return login_page.layout
+    elif pathname == '/register':
+        return registration_page.layout
     elif pathname == '/dashboard':
         return dashboard.layout
     elif pathname == '/historical_data':
         return historical_data.layout
+    elif pathname == '/stream_vibration_data':
+        return stream_vibration_data.layout
     else:
         return '404'
     

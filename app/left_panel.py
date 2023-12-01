@@ -122,14 +122,14 @@ file_details = html.Div(
             style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
         ),
 
-        # Create a heading for the data variables section
-        html.H6("Data variables"),
-        # Create a div container for the variable list with an ID and styling
-        html.Div(
-            id="variable_list",
-            children=[],
-            style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
-        ),
+        # # Create a heading for the data variables section
+        # html.H6("Data variables"),
+        # # Create a div container for the variable list with an ID and styling
+        # html.Div(
+        #     id="variable_list",
+        #     children=[],
+        #     style={"height": "24vh", "maxHeight": "24vh", "overflow": "scroll"},
+        # ),
 
         # # Create a heading for the variable contents section
         # html.H6("Variable contents"),

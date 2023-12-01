@@ -54,7 +54,7 @@ password_input = html.Div(
 
 
 layout = html.Div(className="main h-100 w-100", children=[
-            dcc.Location(id='url', refresh=True, pathname='/login_page'),
+            dcc.Location(id='url', refresh=True, pathname='/login'),
             html.Div(className="container h-100", children=[
                 html.Div(className="row h-100", children=[
                     html.Div(className="col-sm-10 col-md-8 col-lg-6 mx-auto d-table h-100", children=[
@@ -70,7 +70,9 @@ layout = html.Div(className="main h-100 w-100", children=[
                                             html.Div(className="mb-3", children=[password_input]),
                                             html.Div(className="d-flex justify-content-center", style={'padding':'20px'},
                                                     children=[html.Button("Login", id="login-button", className="text-center mb-3 btn btn-primary" , n_clicks=0)]),
-                                            
+                                                        html.Div(className="d-flex justift-content-center", children=[
+                                                            dcc.Link('Register here', href='/register')
+                                                        ])
                                         ])
                                     ])
                                 ])
@@ -96,12 +98,11 @@ def login(n_clicks, username, password):
         SELECT * FROM tbl_users
         WHERE username = %s AND password = %s
         """
-        execute_read_query(query,(username,password))
-        result = cursor.fetchone()
+        result = execute_read_query(query,(username,password))
 
         if result:
             return ('/dashboard',print("success login"))
         else:
-            return ('/login_page',print("fail login"))
+            return ('/login',print("fail login"))
         
     raise dash.exceptions.PreventUpdate

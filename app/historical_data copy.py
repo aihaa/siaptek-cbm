@@ -30,13 +30,18 @@ PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
 #--------------------------------------------------(LAYOUT)------------------------------------------------------------------------
 
+# data_chunk = execute_read_query("SELECT data FROM memory1 WHERE filename = 'y2016-m09-d20-03-31-36.nc'")
+
 # Define the layout of the app
 layout = html.Div(
     [
         dcc.Location(id='url', refresh=True, pathname='/historical_data'),
         html.H4("CONDITION-BASED MONITORING SYSTEM FOR ROTATING EQUIPMENT", style={"text-align": "center","margin": "20px"}),
         navbar,
+        dcc.Interval(id="interval_component", interval=1*1000, n_intervals=0, max_intervals=50000),
         dcc.Store(id="memory2"),    # Store component for storing data
+        dcc.Store(id="stored_data"),
+        html.Div(id="index_holder", style={"display": "none"}, children=0),
         dcc.Store(id="filter_mem_2"), # Store component for storing filter data
         dcc.Store(id="filt_x_mem_2"), # Store component for storing filtered data        html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"}, children=[file_option]),
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
@@ -79,8 +84,8 @@ layout = html.Div(
                     html.Div(className="col-xl-6", children=[
                         html.Div(className="card", children=[
                             html.Div(className="card-body", children=[
-                                html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
-                                html.Div(className="row", children=[dcc.Graph(id="graph_spec2",style={'height':'600px'})])
+                                # html.Div(className="row", children=[html.H5(className="card-title", children=["Spectrogram"])]),
+                                # html.Div(className="row", children=[dcc.Graph(id="graph_spec2",style={'height':'600px'})])
                             ])
                         ])
                     ])
@@ -100,22 +105,37 @@ layout = html.Div(
 )
 def update_memory_hd(filename):
     data = execute_read_query("SELECT data FROM memory1 WHERE filename = %s", (filename, ))
-
     if isinstance(data, list):
-
         mem_data = {}
         for item in data:
             data = {f'object{i}': item for i, item in enumerate(data, start=1)} # <dict>
-
             mem_data = data['object1'][0]
-
             print(mem_data.keys()) # dict_keys(['dims', 'attrs', 'coords', 'data_vars'])
-
-
         return {"filename": filename, "data": mem_data}  
-
     else:
         return {"filename": None, "data": None}
+
+
+@callback(
+    Output("stored_data","data"),
+    Output("index_holder", "children"),
+    Input("interval_component", "n_intervals"),
+    State("memory2", "data"),
+    State("index_holder", "children"),
+    State("stored_data", "data")
+)
+def update_data(n, mem_data, current_index, stored_data):
+    current_index = int(current_index)
+    data_chunk = mem_data['data']['data_vars']['vib']["data"]
+    if not stored_data:
+        stored_data = []
+    if current_index < len(data_chunk):
+        temp_data = data_chunk[current_index]
+        stored_data.append(temp_data)
+        current_index += 1
+    else:
+        current_index = 0
+    return stored_data, current_index
 
 
 @callback(
@@ -127,33 +147,7 @@ def update_metadata2(mem_data):
     print(type(mem_data['data']))
     meta_head = pd.Series(mem_data['data']) # if without data, <list> ; with data <dict>
     print(meta_head)
-
     return str(meta_head)
-
-# @callback(
-#     Output("variable_content2", "children"),
-#     [Input("var_list_radio", "value"),
-#     Input("memory2", "data")]
-# )
-# def update_variable_content2(radio_value, mem_data):
-
-#     print("mem_Data['data'] :")
-#     print(type(mem_data['data']))
-#     print("mem_Data['data'][vib]['data_vars] :")
-#     print(type(mem_data['data']["vib"]['data_vars']))
-#     if mem_data is None and radio_value is None:
-#         raise dash.exceptions.PreventUpdate
-#     else:
-#         # if isinstance(mem_data['data'], dict) and 'data_vars' in mem_data['data']:
-#         #     head_dict = pd.Series(mem_data['data']['data_vars'][radio_value]).head()
-#         # else:
-#         #     raise TypeError("mem_data['data'] is not a dictionary or does not contain the key 'data_vars'")
-
-#         head_dict = pd.Series(mem_data['data']['data_vars'][radio_value]).head()
-
-#     return str(head_dict)
-
-
 
 # Purpose: To select file type and adjust the cutoff frequency and visualize them corresponding to the filter taps and frequency response
 @callback(
@@ -184,7 +178,7 @@ def plot_filter(filter_type_2, n_fft, fs, fc_1, fc_2):
 @callback(
     Output("graph2_1", "figure"),
     Output("filt_x_mem_2", "data"),
-    [Input("memory2", "data"),
+    [Input("stored_data", "data"),
     Input("fs", "value"),
     Input("filter_apply", "value"),
     Input("filter_mem_2", "data")]
@@ -195,11 +189,10 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
         # return html.Div([suggestion])
         raise dash.exceptions.PreventUpdate
     else:
-
         fs = int(fs)
-
         # extract data narrowed to var_list_radio option
-        var_data = mem_data['data']['data_vars']['vib']["data"]
+        # var_data = mem_data['data']['data_vars']['vib']["data"]
+        var_data = mem_data
         df = pd.DataFrame(
             data=var_data,
             index=np.linspace(0, 
@@ -207,14 +200,12 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
                             len(var_data)),
             columns=["vib"]
         )
-
         # Create a Figure object to plot the raw measurement
         fig = go.Figure(
             layout={
                 "xaxis": {"title": "Time (s)"},  # Assuming time is in seconds
                 "yaxis": {"title": "Vibration (m/s)"}  # Include the unit in the y-axis title
-            }
-            
+            }  
         )
         fig.add_trace(
             go.Scatter(
@@ -230,11 +221,8 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
         fig.update_layout
         print(fil_val,fil_taps)
 
-
-
         # check if a filter is applied
         if type(fil_val) is list and len(fil_val) > 0:
-
             filtered = signal.lfilter(
                 fil_taps["taps"],
                 1.0,
@@ -242,8 +230,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
             )
             delay = 0.5*(len(fil_taps["taps"]) - 1) / fs
             print(f"delay--{delay}")
-
-
             indices = df.index[:-int((len(fil_taps["taps"]) - 1) / 2)]
             # create filtered df with appropriate indexing and column name
             df_filt = pd.DataFrame(
@@ -252,7 +238,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
                 columns=["filtered"]
             )
             print(df_filt.head(10))
-
 
             # update the figure after filter is applied
             fig.add_trace(
@@ -266,7 +251,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
                 )
                 )
             )
-
             filt_x = {
                 "filtered": filtered[int((len(fil_taps["taps"]) - 1) / 2):], 
                 "index": indices
@@ -293,9 +277,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
                 x=0
             )
         )
-
-            
-
         return fig, filt_x
 
 
@@ -305,23 +286,21 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
 #                       and visualize the time-domain plot and spectrogram plot for selected variable
 @callback(
     Output('graph2_2', 'figure'),
-    Output("graph_spec2", "figure"),
-    [Input("memory2", "data"),
+    # Output("graph_spec2", "figure"),
+    [Input("stored_data", "data"),
      Input("fs", "value"),
      Input("nfft", "value"),
      Input('graph2_1', 'relayoutData'),
-     Input("filt_x_mem_2", "data"),
+     Input("filt_x_mem_2", "data")
      ])
 def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
     if mem_data is None:
-
         raise dash.exceptions.PreventUpdate
-
     else:
         fs = int(fs)
         nfft = int(nfft)
-        if 'data_vars' in mem_data['data']:
-            var_data = mem_data['data']['data_vars']['vib']["data"]
+        # var_data = mem_data['data']['data_vars']['vib']["data"]
+        var_data = mem_data
         # df = pd.DataFrame(
         #     data=var_data,
         #     index=np.linspace(0, len(var_data) / fs, len(var_data)),
@@ -335,10 +314,8 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
         else:
             start = 0
             end = fs
-
         # Calculate the FFT (Fast Fourier Transform) of the selected variable data within the specified range
         fft_df = calculate_fft(np.array(var_data[start:end]), nfft, fs)
-
         # Create a Figure object to plot the frequency spectrum
         fig = go.Figure()
         fig.add_trace(
@@ -352,52 +329,53 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
                 )
             )
         )
+    #     # Calculate the spectrogram of the selected variable data within the specified range
+    #     freqs, t, Pxx = signal.spectrogram(np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+    #     # Check if there is filtered data available
+    #     if filt_x["filtered"] is not None:
+    #         # Calculate the FFT of the filtered data within the specified range
+    #         fft_filt = calculate_fft(np.array(filt_x["filtered"][start:end]), nfft, fs)
+    #         # Add the filtered frequency spectrum to the Figure object for plotting
+    #         fig.add_trace(
+    #             go.Scatter(
+    #                 name='Frequency spectrum (Filtered)',
+    #                 x=fft_filt["Frequency"],
+    #                 y=fft_filt["Amplitude"],
+    #                 mode="lines",
+    #                 line=dict(
+    #                     color="red"
+    #                 )
+    #             )
+    #         )
+    #         # Calculate the spectrogram of the filtered data within the specified range
+    #         freqs, t, Pxx = signal.spectrogram(np.array(filt_x["filtered"][start:end]), fs=fs, nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+    #     # Customize the layout of the Figure object
+    #     fig.update_layout(xaxis_rangeslider_visible=False,
+    #                     margin=dict(l=10, r=10, t=20, b=20),
+    #                     legend=dict(yanchor="top", y=1, xanchor="left", x=0))
 
-        # Calculate the spectrogram of the selected variable data within the specified range
-        freqs, t, Pxx = signal.spectrogram(np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+    #    # Add x-axis and y-axis labels
+    #     fig.update_xaxes(title_text='Frequency (Hz)') 
+    #     fig.update_yaxes(title_text='Amplitude (m/s²)')     
 
-        # Check if there is filtered data available
-        if filt_x["filtered"] is not None:
-            # Calculate the FFT of the filtered data within the specified range
-            fft_filt = calculate_fft(np.array(filt_x["filtered"][start:end]), nfft, fs)
+    #     # Create a heatmap Figure object for the spectrogram
+    #     trace = [go.Heatmap(
+    #         x=t,
+    #         y=freqs,
+    #         z=10 * np.log10(Pxx),
+    #         colorscale='Jet',
+    #     )]
+    #     layout = go.Layout(
+    #         yaxis=dict(title='Frequency'),  # x-axis label
+    #         xaxis=dict(title='Time'),  # y-axis label
+    #     )
+    #     fig2 = go.Figure(data=trace, layout=layout)
 
-            # Add the filtered frequency spectrum to the Figure object for plotting
-            fig.add_trace(
-                go.Scatter(
-                    name='Frequency spectrum (Filtered)',
-                    x=fft_filt["Frequency"],
-                    y=fft_filt["Amplitude"],
-                    mode="lines",
-                    line=dict(
-                        color="red"
-                    )
-                )
-            )
+        # return fig, fig2
+        return fig
 
-            # Calculate the spectrogram of the filtered data within the specified range
-            freqs, t, Pxx = signal.spectrogram(np.array(filt_x["filtered"][start:end]), fs=fs, nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
 
-        # Customize the layout of the Figure object
-        fig.update_layout(xaxis_rangeslider_visible=False,
-                        margin=dict(l=10, r=10, t=20, b=20),
-                        legend=dict(yanchor="top", y=1, xanchor="left", x=0))
 
-       # Add x-axis and y-axis labels
-        fig.update_xaxes(title_text='Frequency (Hz)') 
-        fig.update_yaxes(title_text='Amplitude (m/s²)')     
-
-        # Create a heatmap Figure object for the spectrogram
-        trace = [go.Heatmap(
-            x=t,
-            y=freqs,
-            z=10 * np.log10(Pxx),
-            colorscale='Jet',
-        )]
-        layout = go.Layout(
-            yaxis=dict(title='Frequency'),  # x-axis label
-            xaxis=dict(title='Time'),  # y-axis label
-        )
-        fig2 = go.Figure(data=trace, layout=layout)
-
-        return fig, fig2
-
+'''
+if stored_data>>limit, ALERTS (alerts box - normal, risk)
+'''

@@ -32,7 +32,6 @@ container_style = {'width': '50%', 'height': '50%', 'display': 'inline-block'}
 
 #--------------------------------------------------(LAYOUT)------------------------------------------------------------------------
 
-perm_data = {}
 def mem_data(filename):
     try:
         data = execute_read_query("SELECT data FROM memory1 WHERE filename = %s", (filename, ))
@@ -41,7 +40,6 @@ def mem_data(filename):
             for item in data:
                 data = {f'object{i}': item for i, item in enumerate(data, start=1)} # <dict>
                 mem_data = data['object1'][0]
-                perm_data = mem_data
                 print("mem_data.keys():")
                 print(mem_data.keys()) # dict_keys(['dims', 'attrs', 'coords', 'data_vars'])
             return {"filename": filename, "data": mem_data}  
@@ -54,6 +52,12 @@ def mem_data(filename):
 filename = 'y2016-m09-d20-03-31-36.nc'
 memory1 = mem_data(filename)['data']['data_vars']['vib']["data"]
 memory2 = mem_data(filename)['data']['data_vars']['tach']["data"]
+
+# Now ensure that both vib_data and tach_data have exactly 1000 data points
+desired_length = 1000
+
+memory1 = memory1[:desired_length] if len(memory1) >= desired_length else memory1 + [None] * (desired_length - len(memory1))
+memory2 = memory2[:desired_length] if len(memory2) >= desired_length else memory2 + [None] * (desired_length - len(memory2))
 
 
 layout = html.Div(
@@ -192,7 +196,7 @@ Allow users to:
     State("fs", "data"),]
 )
 def update_td_plot(stored_data1, stored_data2, fs):
-    if stored_data1 is None or stored_data2 is None:
+    if stored_data1 is None and stored_data2 is None:
         raise dash.exceptions.PreventUpdate
     else:
         fs = int(fs)
