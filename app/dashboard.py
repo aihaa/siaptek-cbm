@@ -76,7 +76,7 @@ layout = html.Div(
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
             [               
             # content
-            html.Div(className="container-fluid",children=[
+            html.Div(className="parent-container",children=[
                 html.Div(id="metadata"),
                 html.Div(
                     style={'display': 'flex', 'flexWrap': 'wrap', 'height': '100vh'},
@@ -85,7 +85,7 @@ layout = html.Div(
                         html.Div(
                             style=container_style,  # Each div will take half of the page width and height
                             children=[
-                                html.Div(className="card", children=[
+                                html.Div(className="card graph-container", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_1",style={'height':'250px'})])
@@ -97,7 +97,7 @@ layout = html.Div(
                         html.Div(
                             style=container_style,
                             children=[
-                                html.Div(className="card", children=[
+                                html.Div(className="card graph-container", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_3",style={'height':'250px'})])
@@ -109,7 +109,7 @@ layout = html.Div(
                         html.Div(
                             style=container_style,
                             children=[
-                                html.Div(className="card", children=[
+                                html.Div(className="card graph-container", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_2",style={'height':'250px'})])
@@ -121,7 +121,7 @@ layout = html.Div(
                         html.Div(
                             style=container_style,
                             children=[
-                                html.Div(className="card", children=[
+                                html.Div(className="card graph-container", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Frequency Plot"])]),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_4",style={'height':'250px'})])

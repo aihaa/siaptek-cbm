@@ -1,0 +1,14 @@
+.parent-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: stretch;
+}
+
+.graph-container {
+    flex-basis: 48%;
+    margin: 10px;
+    box-sizing: border-box;
+}
+
+/* Add more styles as needed */
