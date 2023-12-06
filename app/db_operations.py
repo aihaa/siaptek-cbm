@@ -6,7 +6,7 @@ def get_db_connection():
         user="yourUser",
         password="yourPassword",
         host="localhost"
-    )
+    ) 
     return connection
     
 
