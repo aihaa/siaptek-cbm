@@ -6,7 +6,6 @@ setup execution policy:
 3. .venv\Scripts\activate
 
 how to run the code:
-1. cd FYP\cbm-Final\app
 2. py index.py
 
 how to authenticate github account into vscode:

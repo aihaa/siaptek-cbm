@@ -12,7 +12,6 @@ import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 from scipy import signal
 
-import stream_vibration_data
 import login_page
 import registration_page
 import dashboard
@@ -42,8 +41,6 @@ def display_page(pathname):
         return dashboard.layout
     elif pathname == '/historical_data':
         return historical_data.layout
-    elif pathname == '/stream_vibration_data':
-        return stream_vibration_data.layout
     else:
         return '404'
     

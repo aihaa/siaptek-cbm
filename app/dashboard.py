@@ -22,6 +22,7 @@ from navbar import navbar
 # from additional import offcanvas_left
 from db_operations import *
 import json
+from computation import *
 
 load_figure_template('LUX')
 
@@ -77,7 +78,7 @@ layout = html.Div(
             [               
             # content
             html.Div(className="parent-container",children=[
-                html.Div(id="metadata"),
+                dcc.Graph(id='seal-performance-graph',style={ "transform": "scale(0.5)","padding":0}),
                 html.Div(
                     style={'display': 'flex', 'flexWrap': 'wrap', 'height': '100vh'},
                     children=[
@@ -182,6 +183,66 @@ def update_data(n, memory1, memory2, current_index, stored_data1, stored_data2):
     return stored_data1, stored_data2, current_index
 
 
+
+THRESHOLD=0.0015
+@callback(
+    Output('alert_1', 'children'),
+    Output('alert_1', 'style'),
+    [Input('stored_data1', 'data')]
+)
+def alerts_1(dataPoint):
+    if dataPoint[-1]>THRESHOLD:
+        return "ALERT!!", {"background-color":"red", "color":"white"}
+    else:
+        return "Normal", {"background-color":"green", "color":"white"}
+
+
+
+@callback(
+    Output('seal-performance-graph', 'figure'),
+     [Input('interval_component', 'n_intervals'),
+      State('stored_data1', 'data')]
+)
+def update_seal_performance(n, data):
+    if data is None:
+        raise dash.exceptions.PreventUpdate
+    
+    print("stored_data1::")
+    
+    performance_score = calculate_performance(data)
+    # performance_score = 0.05
+    print(performance_score)
+
+    figure = go.Figure(go.Indicator(
+        mode="gauge+number",
+        value=performance_score,
+        domain={'x': [0,1], 'y': [0,1]},
+        title={'text':'Seal Performance'},
+        gauge={'axis': {'range':[None, 1]},
+               'bar': {'color': "darkblue"},
+               'steps': [
+                   {'range': [0, 0.5], 'color': "lightgrey"},
+                   {'range': [0.5, 1], 'color': "gray"}
+               ],
+               'threshold': {
+                   'line': {'color': "red", 'width': 4},
+                   'thickness': 0.75,
+                   'value': 0.09
+               }
+               }
+    ))
+
+    figure.update_layout(
+        margin={'t':0, 'b':0, 'l':0, 'r':0},
+        paper_bgcolor="white",
+        height=300
+    )
+
+    return figure
+
+
+
+
 '''
 Allow users to:
 1. select variable (vib/tach)
@@ -238,18 +299,6 @@ def update_td_plot(stored_data1, stored_data2, fs):
 
         return fig1, fig2
 
-
-THRESHOLD=0.0015
-@callback(
-    Output('alert_1', 'children'),
-    Output('alert_1', 'style'),
-    [Input('stored_data1', 'data')]
-)
-def alerts_1(dataPoint):
-    if dataPoint[-1]>THRESHOLD:
-        return "ALERT!!", {"background-color":"red", "color":"white"}
-    else:
-        return "Normal", {"background-color":"green", "color":"white"}
 
 
 # Purpose: Allow users to select a variable, adjust the sampling frequency and FFT size,
