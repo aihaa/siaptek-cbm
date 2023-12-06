@@ -88,6 +88,7 @@ layout = html.Div(
                                 html.Div(className="card graph-container", children=[
                                         html.Div(className="card-body", children=[
                                             html.Div(className="row", children=[html.H5(className="card-title",children=["Time Domain"])]),
+                                            html.Div(id="alert_1"),
                                             html.Div(className="row", children=[dcc.Graph(id="graph_1",style={'height':'250px'})])
                                         ])
                                     ]),
@@ -238,6 +239,17 @@ def update_td_plot(stored_data1, stored_data2, fs):
         return fig1, fig2
 
 
+THRESHOLD=0.0015
+@callback(
+    Output('alert_1', 'children'),
+    Output('alert_1', 'style'),
+    [Input('stored_data1', 'data')]
+)
+def alerts_1(dataPoint):
+    if dataPoint[-1]>THRESHOLD:
+        return "ALERT!!", {"background-color":"red", "color":"white"}
+    else:
+        return "Normal", {"background-color":"green", "color":"white"}
 
 
 # Purpose: Allow users to select a variable, adjust the sampling frequency and FFT size,
