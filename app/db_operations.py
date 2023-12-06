@@ -9,7 +9,7 @@ def get_db_connection():
     )
     return connection
         
-
+    
 # INSERT QUERY
 def execute_create_query(query, params=None):
     connection = get_db_connection()
