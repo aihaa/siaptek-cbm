@@ -33,10 +33,12 @@ PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 # Define the layout of the app
 layout = html.Div(
     [
-        dcc.Location(id='url', refresh=True, pathname='/historical_data'),
+        dcc.Location(id='url', refresh=True, pathname='/collection'),
         html.H4("CONDITION-BASED MONITORING SYSTEM FOR ROTATING EQUIPMENT", style={"text-align": "center","margin": "20px"}),
         navbar,
         dcc.Store(id="memory2"),    # Store component for storing data
+        # dcc.Store(id="fs", data=5000),
+        # dcc.Store(id="nfft", data=2048),
         dcc.Store(id="filter_mem_2"), # Store component for storing filter data
         dcc.Store(id="filt_x_mem_2"), # Store component for storing filtered data        html.Div(className="header d-md-flex justify-content-md-center",style={"padding":"10px"}, children=[file_option]),
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
@@ -130,31 +132,6 @@ def update_metadata2(mem_data):
 
     return str(meta_head)
 
-# @callback(
-#     Output("variable_content2", "children"),
-#     [Input("var_list_radio", "value"),
-#     Input("memory2", "data")]
-# )
-# def update_variable_content2(radio_value, mem_data):
-
-#     print("mem_Data['data'] :")
-#     print(type(mem_data['data']))
-#     print("mem_Data['data'][vib]['data_vars] :")
-#     print(type(mem_data['data']["vib"]['data_vars']))
-#     if mem_data is None and radio_value is None:
-#         raise dash.exceptions.PreventUpdate
-#     else:
-#         # if isinstance(mem_data['data'], dict) and 'data_vars' in mem_data['data']:
-#         #     head_dict = pd.Series(mem_data['data']['data_vars'][radio_value]).head()
-#         # else:
-#         #     raise TypeError("mem_data['data'] is not a dictionary or does not contain the key 'data_vars'")
-
-#         head_dict = pd.Series(mem_data['data']['data_vars'][radio_value]).head()
-
-#     return str(head_dict)
-
-
-
 # Purpose: To select file type and adjust the cutoff frequency and visualize them corresponding to the filter taps and frequency response
 @callback(
         Output("filter_mem_2", "data"),
@@ -179,27 +156,30 @@ def plot_filter(filter_type_2, n_fft, fs, fc_1, fc_2):
     }
     return filter_mem_2_data
 
-
-
 @callback(
     Output("graph2_1", "figure"),
     Output("filt_x_mem_2", "data"),
     [Input("memory2", "data"),
-    Input("fs", "value"),
+    State("fs", "value"),
     Input("filter_apply", "value"),
-    Input("filter_mem_2", "data")]
+    Input("filter_mem_2", "data")
+    ]
 )
 def update_td_plot(mem_data, fs, fil_val, fil_taps):
-    if mem_data is None or fil_val is None or fil_taps is None:
+    if mem_data is None:
         # suggestion = html.Ul([html.Li(var) for var in predefined_data['data_vars'].keys()])
         # return html.Div([suggestion])
         raise dash.exceptions.PreventUpdate
     else:
+        var_data = None
 
         fs = int(fs)
-
-        # extract data narrowed to var_list_radio option
-        var_data = mem_data['data']['data_vars']['vib']["data"]
+        if 'data_vars' in mem_data['data']:
+            var_data = mem_data['data']['data_vars']['vib']["data"]
+            
+        if var_data is None or len(var_data)==0:
+            return go.Figure(), go.Figure()
+        
         df = pd.DataFrame(
             data=var_data,
             index=np.linspace(0, 
@@ -207,7 +187,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
                             len(var_data)),
             columns=["vib"]
         )
-
         # Create a Figure object to plot the raw measurement
         fig = go.Figure(
             layout={
@@ -228,7 +207,7 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
             )
         )
         fig.update_layout
-        print(fil_val,fil_taps)
+        print(fil_taps)
 
 
 
@@ -294,8 +273,6 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
             )
         )
 
-            
-
         return fig, filt_x
 
 
@@ -307,8 +284,8 @@ def update_td_plot(mem_data, fs, fil_val, fil_taps):
     Output('graph2_2', 'figure'),
     Output("graph_spec2", "figure"),
     [Input("memory2", "data"),
-     Input("fs", "value"),
-     Input("nfft", "value"),
+     State("fs", "value"),
+     State("nfft", "value"),
      Input('graph2_1', 'relayoutData'),
      Input("filt_x_mem_2", "data"),
      ])
@@ -316,18 +293,24 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
     if mem_data is None:
 
         raise dash.exceptions.PreventUpdate
-
+   
     else:
+        var_data = None
         fs = int(fs)
         nfft = int(nfft)
         if 'data_vars' in mem_data['data']:
             var_data = mem_data['data']['data_vars']['vib']["data"]
+        # else:
+        #     var_data = None
         # df = pd.DataFrame(
         #     data=var_data,
         #     index=np.linspace(0, len(var_data) / fs, len(var_data)),
         #     columns=['vib']
         # )
 
+        if var_data is None or len(var_data)==0:
+            return go.Figure(), go.Figure()
+        
         # Check if a range selection has been made on the x-axis of graph_1
         if 'xaxis.range[0]' in relayoutData:
             start = int(relayoutData["xaxis.range[0]"] * fs)
@@ -354,7 +337,7 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
         )
 
         # Calculate the spectrogram of the selected variable data within the specified range
-        freqs, t, Pxx = signal.spectrogram(np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
+        freqs, t, Pxx = signal.spectrogram(x=np.array(var_data[start:end]),fs=fs,nfft=fs, window=signal.get_window("hamming", fs, fftbins=True))
 
         # Check if there is filtered data available
         if filt_x["filtered"] is not None:
@@ -384,7 +367,17 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
 
        # Add x-axis and y-axis labels
         fig.update_xaxes(title_text='Frequency (Hz)') 
-        fig.update_yaxes(title_text='Amplitude (m/s²)')     
+        fig.update_yaxes(title_text='Amplitude (m/s²)')  
+
+
+        print("np.array(var_data[start:end]):")
+        print(np.array(var_data[start:end]))
+        print("start:")
+        print(start)
+        print("end:")
+        print(end)
+        print("t:")
+        print(t)   
 
         # Create a heatmap Figure object for the spectrogram
         trace = [go.Heatmap(
@@ -398,6 +391,8 @@ def update_fd_plot(mem_data, fs, nfft, relayoutData, filt_x):
             xaxis=dict(title='Time'),  # y-axis label
         )
         fig2 = go.Figure(data=trace, layout=layout)
+
+        
 
         return fig, fig2
 

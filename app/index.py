@@ -39,7 +39,7 @@ def display_page(pathname):
         return registration_page.layout
     elif pathname == '/dashboard':
         return dashboard.layout
-    elif pathname == '/historical_data':
+    elif pathname == '/collection':
         return historical_data.layout
     else:
         return '404'

@@ -158,19 +158,6 @@ right_panel = html.Div(
     ]
 )
 
-# Contains input boxes for the sampling frequency and NFFT values
-right_panel_2 = html.Div(
-    [
-        create_input_box("Sampling Frequency: ", "fs_2", "50000", 50000),
-        create_input_box("NFFT: ", "nfft_2", "2048", 2048),
-
-        create_checkbox("Filter:", [0], "filter_apply_2", 0, True),
-        create_drop_down("Window type", FILTERS, "filter_type_2", 11),
-        create_input_box("Cut off 1", "fc_1_1", "0", 0),
-        create_input_box("Cut off 2", "fc_2_2", "500", 500),
-    ]
-)
-
 # Contains checkbox, dropdown menu, input boxes, and two graphs for filter-related options and visualizations
 filter_panel = html.Div(
     [

@@ -78,7 +78,12 @@ layout = html.Div(
             [               
             # content
             html.Div(className="parent-container",children=[
-                dcc.Graph(id='seal-performance-graph',style={ "transform": "scale(0.5)","padding":0}),
+                # html.Div(children=[
+                #     html.Div(className="card-body", children=[
+                #                             html.Div(className="row", children=[html.H5(className="card-title",children=["Performance"])]),
+                #                             html.Div(className="row", children=[dcc.Graph(className="row", id='seal-performance-graph',style={ "transform": "scale(0.5)"})])
+                #                         ])
+                # ]),
                 html.Div(
                     style={'display': 'flex', 'flexWrap': 'wrap', 'height': '100vh'},
                     children=[
@@ -198,47 +203,48 @@ def alerts_1(dataPoint):
 
 
 
-@callback(
-    Output('seal-performance-graph', 'figure'),
-     [Input('interval_component', 'n_intervals'),
-      State('stored_data1', 'data')]
-)
-def update_seal_performance(n, data):
-    if data is None:
-        raise dash.exceptions.PreventUpdate
+# @callback(
+#     Output('seal-performance-graph', 'figure'),
+#      [Input('interval_component', 'n_intervals'),
+#       State('stored_data1', 'data')]
+# )
+# def update_seal_performance(n, data):
+#     if data is None:
+#         raise dash.exceptions.PreventUpdate
     
-    print("stored_data1::")
+#     print("stored_data1::")
     
-    performance_score = calculate_performance(data)
-    # performance_score = 0.05
-    print(performance_score)
+#     performance_score = calculate_performance(data)
+#     # performance_score = 0.05
+#     print(performance_score)
 
-    figure = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=performance_score,
-        domain={'x': [0,1], 'y': [0,1]},
-        title={'text':'Seal Performance'},
-        gauge={'axis': {'range':[None, 1]},
-               'bar': {'color': "darkblue"},
-               'steps': [
-                   {'range': [0, 0.5], 'color': "lightgrey"},
-                   {'range': [0.5, 1], 'color': "gray"}
-               ],
-               'threshold': {
-                   'line': {'color': "red", 'width': 4},
-                   'thickness': 0.75,
-                   'value': 0.09
-               }
-               }
-    ))
+#     figure = go.Figure(go.Indicator(
+#         mode="gauge+number",
+#         value=performance_score,
+#         domain={'x': [0,1], 'y': [0,1]},
+#         title={'text':'Seal Performance'},
+#         gauge={'axis': {'range':[None, 1]},
+#                'bar': {'color': "darkblue"},
+#                'steps': [
+#                    {'range': [0, 0.5], 'color': "lightgrey"},
+#                    {'range': [0.5, 1], 'color': "gray"}
+#                ],
+#                'threshold': {
+#                    'line': {'color': "red", 'width': 4},
+#                    'thickness': 0.75,
+#                    'value': 0.09
+#                }
+#                }
+#     ))
 
-    figure.update_layout(
-        margin={'t':0, 'b':0, 'l':0, 'r':0},
-        paper_bgcolor="white",
-        height=300
-    )
+#     figure.update_layout(
+#         title='Performance',
+#         margin={'t':0, 'b':0, 'l':0, 'r':0},
+#         paper_bgcolor="white",
+#         height=300
+#     )
 
-    return figure
+#     return figure
 
 
 
@@ -246,7 +252,7 @@ def update_seal_performance(n, data):
 '''
 Allow users to:
 1. select variable (vib/tach)
-2. adjust filter settings
+2. adjust filter settings - untuk tengok filtered data tu mcm mana
 3. visualize raw measurement (graph_1) & filtered data
 '''
 
@@ -261,6 +267,7 @@ def update_td_plot(stored_data1, stored_data2, fs):
     if stored_data1 is None and stored_data2 is None:
         raise dash.exceptions.PreventUpdate
     else:
+
         fs = int(fs)
 
         df1 = pd.DataFrame(

@@ -51,7 +51,7 @@ search_bar = dbc.Row(
 nav = dbc.Nav(className="",children=
     [
         dbc.NavItem(dbc.NavLink("Dashboard", className="", href="/dashboard")),
-        dbc.NavItem(dbc.NavLink("Collection", href="/historical_data")),
+        dbc.NavItem(dbc.NavLink("Collection", href="/collection")),
         # dbc.NavItem(dbc.NavLink("Another link", href="#")),
         # dbc.NavItem(dbc.NavLink("Disabled", disabled=True, href="#")),
         dbc.DropdownMenu(
