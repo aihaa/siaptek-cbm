@@ -72,7 +72,8 @@ layout = html.Div(className="main h-100 w-100", children=[
                                                     children=[html.Button("Login", id="login-button", className="text-center mb-3 btn btn-primary" , n_clicks=0)]),
                                                         html.Div(className="d-flex justift-content-center", children=[
                                                             dcc.Link('Register here', href='/register')
-                                                        ])
+                                                        ]),
+                                            html.Div(id="login-status")
                                         ])
                                     ])
                                 ])
@@ -81,28 +82,42 @@ layout = html.Div(className="main h-100 w-100", children=[
                     ])
                 ])
             ]),
-            html.Div(id="login-status")
+            
         ])
 
 
 @callback(
     [Output('url', 'pathname'),
-     Output("login-status","children")],
+     Output("login-status", "children")],
     [Input("login-button", "n_clicks")],
-    [State("username-input","value"),
-     State("password-input","value")]
+    [State("username-input", "value"),
+     State("password-input", "value")]
 )
 def login(n_clicks, username, password):
     if n_clicks > 0:
-        query = """
-        SELECT * FROM tbl_users
-        WHERE username = %s AND password = %s
-        """
-        result = execute_read_query(query,(username,password))
+        try:
+            # Input validation
+            if not username or not password:
+                return ('/login', 'Please enter both username and password.')
 
-        if result:
-            return ('/dashboard',print("success login"))
-        else:
-            return ('/login',print("fail login"))
-        
-    raise dash.exceptions.PreventUpdate
+            # Database query
+            query = """
+            SELECT * FROM tbl_users
+            WHERE username = %s AND password = %s
+            """
+            result = execute_read_query(query, (username, password))
+
+            # Check query result
+            if result:
+                return ('/dashboard', 'Success: Logged in')
+            else:
+                return ('/login', 'Login failed: Invalid username or password')
+
+        except psycopg2.DatabaseError as e:
+            print(f"Database error: {e}")
+            return ('/login', 'Database error occurred, please try again later')
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return ('/login', 'An unexpected error occurred, please try again')
+    else:
+        raise dash.exceptions.PreventUpdate

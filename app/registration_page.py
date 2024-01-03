@@ -60,6 +60,7 @@ layout = html.Div(
                                     html.Div(className="mb-3", children=[confirm_password_input]),
                                     html.Div(className="d-flex justify-content-center", style={'padding':'20px'},
                                             children=[html.Button("Register", id="register-button", className="text-center mb-3 btn btn-primary", n_clicks=0)]),
+                                    html.Div(id="registration-status")
                                 ])
                             ])
                         ])
@@ -68,7 +69,7 @@ layout = html.Div(
                 
             ])
         ]),
-        html.Div(id="registration-status")
+        
     ]
 )
 
@@ -82,18 +83,33 @@ layout = html.Div(
 )
 def register(n_clicks, username, password, confirm_password):
     if n_clicks > 0:
-        if password != confirm_password:
-            return ('/register', 'Passwords do not match')
-        
-        # Check if username is already exists
-        user_check_query = "SELECT * FROM tbl_users WHERE username = %s"
-        result = execute_read_query(user_check_query, (username,))
-        if result:
-            return ('/register', 'Username already exists')
-        
-        # Insert new user
-        insert_query = "INSERT INTO tbl_users (username, password) VALUES (%s,%s)"
-        execute_create_query(insert_query, (username, password))
-        return ('/login', 'Registration successful, please login')
-    
+        try:
+            # Input Validation
+            if not username or not password or not confirm_password:
+                return ('/register', 'Please fill all fields')
+
+            if password != confirm_password:
+                return ('/register', 'Passwords do not match')
+            
+            # Database Operations
+            try:
+                # Check if username already exists
+                user_check_query = "SELECT * FROM tbl_users WHERE username = %s"
+                result = execute_read_query(user_check_query, (username,))
+                if result:
+                    return ('/register', 'Username already exists')
+                
+                # Insert new user
+                insert_query = "INSERT INTO tbl_users (username, password) VALUES (%s,%s)"
+                execute_create_query(insert_query, (username, password))
+                return ('/login', 'Registration successful, please login')
+
+            except psycopg2.DatabaseError as e:
+                print(f"Database error: {e}")
+                return ('/register', 'Database error occurred, please try again later')
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return ('/register', 'An unexpected error occurred, please try again')
+
     raise dash.exceptions.PreventUpdate

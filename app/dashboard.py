@@ -23,6 +23,9 @@ from navbar import navbar
 from db_operations import *
 import json
 from computation import *
+from notifications.email_notif import email_notification
+# from notifications.sms_notif import sms_notification
+from notifications.desk_notif import desk_notification
 
 load_figure_template('LUX')
 
@@ -73,7 +76,9 @@ layout = html.Div(
         dcc.Store(id="nfft", data=2048),
         dcc.Store(id="stored_data1"),
         dcc.Store(id="stored_data2"),
+        html.Div(id="alert_output"),
         html.Div(id="index_holder", style={"display": "none"}, children=0),
+        # dcc.Store(id='alert-triggered', data={'triggered': False}),  # Intermediate state storage
         html.Div(className="main",style={"justify-content":"center","align-items":"center","margin":"auto"},children=
             [               
             # content
@@ -196,57 +201,59 @@ THRESHOLD=0.0015
     [Input('stored_data1', 'data')]
 )
 def alerts_1(dataPoint):
-    if dataPoint[-1]>THRESHOLD:
-        return "ALERT!!", {"background-color":"red", "color":"white"}
-    else:
-        return "Normal", {"background-color":"green", "color":"white"}
+    alert_triggered = False
 
+    if dataPoint[-1]>THRESHOLD:
+        # email_notification("aimanfatihahahmadrazif@gmail.com", dataPoint[-1], THRESHOLD)
+        # desk_notification(dataPoint[-1], THRESHOLD)
+        # sms_notification()
+        alert_triggered = True
+    
+    if alert_triggered:
+        print("alert_triggered: True")
+        return f"ALERT!!: {dataPoint[-1]}", {"background-color":"red", "color":"white"}
+    else:
+        return f"Normal: {dataPoint[-1]}", {"background-color":"green", "color":"white"}
+
+@callback(
+    Output('alert_output', 'children'),
+    Input('stored_data1', 'data'),
+)
+def alert_2(dataPoint):
+    if dataPoint[-1]>THRESHOLD:
+        email_notification("aimanfatihahahmadrazif@gmail.com", dataPoint[-1], THRESHOLD)
+        desk_notification(dataPoint[-1], THRESHOLD)
+        return "Alert triggered"
+    else:
+        raise PreventUpdate 
+    
 
 
 # @callback(
-#     Output('seal-performance-graph', 'figure'),
-#      [Input('interval_component', 'n_intervals'),
-#       State('stored_data1', 'data')]
+#     Output('alert-triggered', 'data'),
+#     [Input('input-trigger', 'n_intervals')],
+#     [State('stored_data1', 'data')]
 # )
-# def update_seal_performance(n, data):
-#     if data is None:
-#         raise dash.exceptions.PreventUpdate
+# def alerts_2(n_intervals, dataPoint):
+#     if dataPoint and dataPoint[-1]>THRESHOLD:
+#         email_notification("aimanfatihahahmadrazif@gmail.com", dataPoint[-1], THRESHOLD)
+#         desk_notification(dataPoint[-1], THRESHOLD)
+#         return {'triggered': True}
+#     else:
+#         return {'triggered': False}
     
-#     print("stored_data1::")
-    
-#     performance_score = calculate_performance(data)
-#     # performance_score = 0.05
-#     print(performance_score)
 
-#     figure = go.Figure(go.Indicator(
-#         mode="gauge+number",
-#         value=performance_score,
-#         domain={'x': [0,1], 'y': [0,1]},
-#         title={'text':'Seal Performance'},
-#         gauge={'axis': {'range':[None, 1]},
-#                'bar': {'color': "darkblue"},
-#                'steps': [
-#                    {'range': [0, 0.5], 'color': "lightgrey"},
-#                    {'range': [0.5, 1], 'color': "gray"}
-#                ],
-#                'threshold': {
-#                    'line': {'color': "red", 'width': 4},
-#                    'thickness': 0.75,
-#                    'value': 0.09
-#                }
-#                }
-#     ))
-
-#     figure.update_layout(
-#         title='Performance',
-#         margin={'t':0, 'b':0, 'l':0, 'r':0},
-#         paper_bgcolor="white",
-#         height=300
-#     )
-
-#     return figure
-
-
+# @callback(
+#     [Output('alert_1', 'children'),
+#      Output('alert_1', 'style')],
+#      [Input('alert-triggered', 'data')],
+#      [State('stored_data1', 'data')]
+# )
+# def update_alert_display(alert_data, dataPoint):
+#     if alert_data['triggered']:
+#         return "ALERT!!", {"background-color":"red", "color":"white"}
+#     else:
+#         return f"Normal: {dataPoint[-1]}", {"background-color":"green", "color":"white"}
 
 
 '''
