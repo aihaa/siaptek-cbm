@@ -83,12 +83,15 @@ layout = html.Div(
 )
 def register(n_clicks, username, password, confirm_password):
     if n_clicks > 0:
+        print(f"n_clicks value: {n_clicks}")
         try:
             # Input Validation
             if not username or not password or not confirm_password:
+                print("Error: empty fields")
                 return ('/register', 'Please fill all fields')
 
             if password != confirm_password:
+                print("Error: password not match")
                 return ('/register', 'Passwords do not match')
             
             # Database Operations
@@ -97,6 +100,7 @@ def register(n_clicks, username, password, confirm_password):
                 user_check_query = "SELECT * FROM tbl_users WHERE username = %s"
                 result = execute_read_query(user_check_query, (username,))
                 if result:
+                    print("Error: Username already exist")
                     return ('/register', 'Username already exists')
                 
                 # Insert new user

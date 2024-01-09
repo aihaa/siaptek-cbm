@@ -1,16 +1,20 @@
 # Import necessary libraries
 import dash
-import numpy as np
+# import numpy as np
 # Import specific components and functions from other files
-from left_panel import *
-from utils import parse_contents, calculate_fft, get_ftaps
+# from left_panel import *
+# from utils import parse_contents, calculate_fft, get_ftaps
 
-from dash.dependencies import Input, Output
-from dash.exceptions import PreventUpdate
-import pandas as pd
-import plotly.graph_objects as go
-import matplotlib.pyplot as plt
-from scipy import signal
+from dash import callback, html, dcc
+from dash.dependencies import Input, Output, State
+# from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
+# import pandas as pd
+# import plotly.graph_objects as go
+# import matplotlib.pyplot as plt
+# from scipy import signal
+from db_operations import *
+import psycopg2
 
 import login_page
 import registration_page
@@ -26,17 +30,19 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_ca
 server = app.server
 
 app.layout = html.Div([
-    dcc.Location(id='url',refresh=True),
+    dcc.Location(id='url',refresh=False),
     html.Div(id='page-content')
 ])
 
-@app.callback(Output('page-content','children'),
-              Input('url','pathname'))
+@app.callback(
+        Output('page-content','children'),
+        Input('url','pathname'))
 def display_page(pathname):
-    if pathname == '/login':
-        return login_page.layout
-    elif pathname == '/register':
+    if pathname == '/register':
         return registration_page.layout
+    elif pathname == '/login':
+        return login_page.layout
+    
     elif pathname == '/dashboard':
         return dashboard.layout
     elif pathname == '/collection':

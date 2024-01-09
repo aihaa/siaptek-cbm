@@ -55,7 +55,7 @@ nav = dbc.Nav(className="",children=
         # dbc.NavItem(dbc.NavLink("Another link", href="#")),
         # dbc.NavItem(dbc.NavLink("Disabled", disabled=True, href="#")),
         dbc.DropdownMenu(
-            [dbc.DropdownMenuItem("Alerts & Notification", href="#"), dbc.DropdownMenuItem("Sign Out",href="/login_page")],
+            # [dbc.DropdownMenuItem("Alerts & Notification", href="#"), dbc.DropdownMenuItem("Sign Out",href="/login")],
             label="Settings",
             nav=True,
         ),
@@ -81,7 +81,7 @@ navbar = dbc.Navbar( className="" ,children=
             nav,
             dbc.NavbarToggler(id="navbar-toggler", n_clicks=0),
             dbc.Collapse(
-                search_bar,
+                # search_bar,
                 id="navbar-collapse",
                 is_open=False,
                 navbar=True,

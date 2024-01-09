@@ -7,5 +7,5 @@ def desk_notification(data_point, threshold):
            
             # displaying time
             timeout=2
-)
+) 
     
