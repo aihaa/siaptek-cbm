@@ -1,4 +1,4 @@
-#Vibration Monitoring System for Rotating Equipment in Oil and Gas
+# Vibration Monitoring System for Rotating Equipment in Oil and Gas
 
 ## Overview
 This project develops a web-based vibration monitoring system for rotating equipment in the oil and gas industry. It focuses on proactive maintenance to reduce downtime and operational costs.
